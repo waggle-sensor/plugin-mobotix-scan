@@ -75,7 +75,7 @@ class CameraSampler:
             "--dir",
             str(self.args.workdir),
         ]
-        
+        #print(cmd)
         logging.info(f"Calling camera interface: {cmd}")
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
             while True:
@@ -146,7 +146,7 @@ class PTController:
         30:"%FF%01%00%07%00%30%38",
         31:"%FF%01%00%07%00%31%39",
         32:"%FF%01%00%07%00%32%3A"
-        }
+    }
 
 
 
@@ -180,14 +180,6 @@ class PTController:
             #print("Error: {}".format(e))
             return e
 
-        return 0
-
-    def move_preset_single(self, preset_id):
-        '''
-        Moves the camera to a single preset position and publishes the camera message to the beehive.
-        '''    
-        status = self.move_to_preset(preset_id)
-        return status
 
 
 

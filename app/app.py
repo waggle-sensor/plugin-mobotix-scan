@@ -15,7 +15,6 @@ def loop_check(i, m):
 
 
 
-
 def main(args):
     '''
         Calls sampler and mover functions 
@@ -28,6 +27,7 @@ def main(args):
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
             loops = loops + 1
+
             for move_pos in args.preset:
                 logging.info(f"Loop {loops} of " +
                 ("infinite" if args.loops < 0 else str(args.loops)))
@@ -35,21 +35,22 @@ def main(args):
                 camera_sampler.run_sampler()
 
                 #This move will exclude the last position but give more time for movement
-                status = camera_scanner.move_preset_single(move_pos)
+                status = camera_scanner.move_to_preset(move_pos)
                 # publish move status to the beehive
                 plugin.publish('mobotix.move.status', status)
 
                 # upload files
                 for tspath in args.workdir.glob("*"):
+                    print(tspath)
                     if tspath.suffix == ".rgb":
                         tspath = camera_sampler.convert_rgb_to_jpg(tspath)
-
+                        print(tspath)
                         # upload the file
                         logging.debug(f"Uploading {tspath}...")
                         plugin.upload_file(str(tspath))
 
                 logging.info(f"Processed loop {loops}")
-                #time.sleep(2) # For safety.
+                time.sleep(2) # For safety.
 
 
 
