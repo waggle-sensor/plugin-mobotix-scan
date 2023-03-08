@@ -187,8 +187,7 @@ class PTController:
         Moves the camera to a single preset position and publishes the camera message to the beehive.
         '''    
         status = self.move_to_preset(preset_id)
-        # publish status to the beehive
-        with Plugin() as plugin:
-            plugin.publish('mobotix.move.status', status)
+        return status
+
 
 

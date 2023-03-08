@@ -35,7 +35,9 @@ def main(args):
                 camera_sampler.run_sampler()
 
                 #This move will exclude the last position but give more time for movement
-                camera_scanner.move_preset_single(move_pos)
+                status = camera_scanner.move_preset_single(move_pos)
+                # publish move status to the beehive
+                plugin.publish('mobotix.move.status', status)
 
                 # upload files
                 for tspath in args.workdir.glob("*"):
