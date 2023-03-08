@@ -89,6 +89,14 @@ if __name__ == "__main__":
         help="Number of loops to perform. Defaults to 'infinite' (-1)",
     )
     parser.add_argument(
+        "-w",
+        "--workdir",
+        dest="workdir",
+        type=Path,
+        default="./data",
+        help="Directory to cache Camara data before upload",
+    )
+    parser.add_argument(
         "-u",
         "--user",
         dest="user",
