@@ -27,11 +27,10 @@ def main(args):
     loops = 0
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
+            loops = loops + 1
             for move_pos in args.preset:
-                loops = loops + 1
                 logging.info(f"Loop {loops} of " +
                 ("infinite" if args.loops < 0 else str(args.loops)))
-                frames = 0
 
                 camera_sampler.run_sampler()
 
@@ -42,13 +41,12 @@ def main(args):
                 for tspath in args.workdir.glob("*"):
                     if tspath.suffix == ".rgb":
                         tspath = camera_sampler.convert_rgb_to_jpg(tspath)
-                        frames = frames + 1
 
                         # upload the file
                         logging.debug(f"Uploading {tspath}...")
                         plugin.upload_file(str(tspath))
 
-                logging.info(f"Processed {frames} frames in loop {loops}")
+                logging.info(f"Processed loop {loops}")
                 #time.sleep(2) # For safety.
 
 
