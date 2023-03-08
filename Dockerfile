@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     make \
-    libboost-all-dev
+    libboost-all-dev \
+    curl
 
 ADD mobotix_sdk /build
 RUN cd /build/eventstreamclient/lib/Linux && \
