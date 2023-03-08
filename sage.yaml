@@ -1,0 +1,15 @@
+name: "mobotix-scan"
+description: "To move Mobotix camera and sample images from specified preset locations in loop"
+version: "0.23.3.8"
+authors: "Bhupendra Raut <braut@anl.gov>"
+collaborators: "Raj Sankaran, Dario Dematties Reyes, Joseph Swantek, Neal Conrad, Nicola Ferrier, Pete Beckman, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho Kim"
+funding: "NSF 1935984"
+license: "GPL v3 license"
+keywords: "Mobotix, Pan-Tilt, IR"
+homepage: "https://github.com/waggle-sensor/plugin-mobotix-scan"
+source:
+  architectures:
+    - "linux/amd64"
+    - "linux/arm64"
+  url: "https://github.com/waggle-sensor/plugin-mobotix-scan"
+  branch: "main"
