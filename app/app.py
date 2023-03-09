@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+"""
+Created on Mon Dec 13 11:05:11 2021
+
+1. Runs the Mobotix C++ sampler with the given arguments.
+2. The .rgb files are too large, so we used ffmpeg to convert to JPG.
+"""
 
 import argparse
 import logging
@@ -9,69 +16,116 @@ import time
 from pathlib import Path
 from select import select
 
-from mobotix import get_camera_frames
-from mobotix import extract_timestamp_and_filename, convert_rgb_to_jpg
-from mobotix import move_to_preset
 import timeout_decorator
 from waggle.plugin import Plugin
 
-DEFAULT_CAMERA_TIMEOUT = 30
+# camera image fetch timeout (seconds)
+DEFAULT_CAMERA_TIMEOUT = 120
 
-def loop_check(i, m):
-    '''
-    A helper function used to control the loop-scan.
-        
-    Returns True if i < m, where i is a loop counter 
-    and m is the number of times to perform the loop-scan. 
-    '''
-    return m < 0 or i < m
 
+def extract_timestamp_and_filename(path: Path):
+    timestamp_str, filename = path.name.split("_", 1)
+    timestamp = int(timestamp_str)
+    return timestamp, path.with_name(filename)
+
+
+def extract_resolution(path: Path) -> str:
+    return re.search("\d+x\d+", path.stem).group()
+
+
+def convert_rgb_to_jpg(fname_rgb: Path):
+    fname_jpg = fname_rgb.with_suffix(".jpg")
+    image_dims = extract_resolution(fname_rgb)
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-f",
+            "rawvideo",
+            "-pixel_format",
+            "bgra",
+            "-video_size",
+            image_dims,
+            "-i",
+            str(fname_rgb),
+            str(fname_jpg),
+        ],
+        check=True,
+    )
+
+    logging.debug("Removing %s", fname_rgb)
+    fname_rgb.unlink()
+    return fname_jpg
+
+
+@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
+def get_camera_frames(args):
+    cmd = [
+        "/thermal-raw",
+        "--url",
+        args.ip,
+        "--user",
+        args.user,
+        "--password",
+        args.password,
+        "--dir",
+        str(args.workdir),
+    ]
+    logging.info(f"Calling camera interface: {cmd}")
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
+        while True:
+            pollresults = select([process.stdout], [], [], 5)[0]
+            if not pollresults:
+                logging.warning("Timeout waiting for camera interface output")
+                continue
+            output = pollresults[0].readline()
+            if not output:
+                logging.warning("No data from camera interface output")
+                continue
+            m = re.search("frame\s#(\d+)", output.strip().decode())
+            logging.info(output.strip().decode())
+            if m and int(m.groups()[0]) > args.frames:
+                logging.info("Max frame count reached, closing camera capture")
+                return
 
 
 def main(args):
-    
+    def loop_check(i, m):
+        return m < 0 or i < m
+
     loops = 0
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
             loops = loops + 1
-            logging.info(f"Loop {loops} of " + 
-                         ("infinite" if args.loops < 0 else str(args.loops)))
+            logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
 
-            for move_pos in args.preset:
-                # Run the Mobotix sampler
-                try:
-                    get_camera_frames(args, timeout=args.camera_timeout)
-                except timeout_decorator.timeout_decorator.TimeoutError:
-                    logging.warning(f"Timed out attempting to capture frame.")
-                    sys.exit("Exit error: Camera Timeout.")
-                except Exception as e:
-                    logging.warning(f"Unknown exception {e}.")
-                    sys.exit("Exit error: Unknown Camera Exception.")
+            # Run the Mobotix sampler
+            try:
+                get_camera_frames(args, timeout=args.camera_timeout)
+            except timeout_decorator.timeout_decorator.TimeoutError:
+                logging.warning(f"Timed out attempting to capture {args.frames} frames.")
+                sys.exit("Exit error: Camera Timeout.")
+            except Exception as e:
+                logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
+                sys.exit("Exit error: Unknown Camera Exception.")
 
-                status = move_to_preset(move_pos, args)
-                plugin.publish('mobotix.move.status', status)
+            # upload files
+            for tspath in args.workdir.glob("*"):
+                if tspath.suffix == ".rgb":
+                    tspath = convert_rgb_to_jpg(tspath)
+                    frames = frames + 1
 
-                # upload files
-                for tspath in args.workdir.glob("*"):
-                    if tspath.suffix == ".rgb":
-                        tspath = convert_rgb_to_jpg(tspath)
-                        frames = frames + 1
+                timestamp, path = extract_timestamp_and_filename(tspath)
+                os.rename(tspath, path)
 
-                    timestamp, path = extract_timestamp_and_filename(tspath)
-                    os.rename(tspath, path)
-
-                    logging.debug(path)
-                    logging.debug(timestamp)
-                    plugin.upload_file(path, timestamp=timestamp)
-                    time.sleep(3)
+                logging.debug(path)
+                logging.debug(timestamp)
+                plugin.upload_file(path, timestamp=timestamp)
 
             logging.info(f"Processed {frames} frames")
             if loop_check(loops, args.loops):
                 logging.info(f"Sleeping for {args.loopsleep} seconds between loops")
                 time.sleep(args.loopsleep)
-
-
 
 
 if __name__ == "__main__":
@@ -86,15 +140,6 @@ if __name__ == "__main__":
         dest="ip",
         default=os.getenv("CAMERA_IP", ""),
         help="Camera IP or URL",
-    )
-    parser.add_argument(
-        "-pt",
-        "--preset",
-        dest="preset",
-        type=int,
-        default= [i for j in range(4) for i in range(j+1, 33, 4)],
-        nargs="+",
-        help="preset locations for scanning"
     )
     parser.add_argument(
         "-u",
@@ -119,6 +164,14 @@ if __name__ == "__main__":
         type=Path,
         default="./data",
         help="Directory to cache Camara data before upload",
+    )
+    parser.add_argument(
+        "-f",
+        "--frames",
+        dest="frames",
+        type=int,
+        default=os.getenv("FRAMES_PER_LOOP", 1),
+        help="Frames to capture per loop",
     )
     parser.add_argument(
         "-t",

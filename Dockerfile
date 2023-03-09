@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     make \
-    libboost-all-dev 
+    libboost-all-dev
 
 ADD mobotix_sdk /build
 RUN cd /build/eventstreamclient/lib/Linux && \
@@ -25,8 +25,7 @@ RUN pip3 install --no-cache-dir --upgrade -r /app/requirements.txt
 RUN apt-get update && apt-get install -y \
     libboost-filesystem1.71.0 \
     libboost-program-options1.71.0 \
-    ffmpeg \
-    curl 
+    ffmpeg
 
 COPY --from=builder /build/eventstreamclient/plugin-client/thermal-raw/build/thermal-raw /thermal-raw
 
