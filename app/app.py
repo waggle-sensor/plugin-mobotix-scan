@@ -22,6 +22,76 @@ from waggle.plugin import Plugin
 # camera image fetch timeout (seconds)
 DEFAULT_CAMERA_TIMEOUT = 120
 
+# Dictionary contains "presets" which maps preset position numbers to the 
+# corresponding string for curl command for that position. 
+presets = {
+        1: "%FF%01%00%07%00%01%09",
+        2: "%FF%01%00%07%00%02%0A",
+        3: "%FF%01%00%07%00%03%0B",
+        4: "%FF%01%00%07%00%04%0C",
+        5: "%FF%01%00%07%00%05%0D",
+        6: "%FF%01%00%07%00%06%0E",
+        7: "%FF%01%00%07%00%07%0F",
+        8: "%FF%01%00%07%00%08%10",
+        9: "%FF%01%00%07%00%09%11",
+        10: "%FF%01%00%07%00%10%18",
+        11:"%FF%01%00%07%00%11%19",
+        12:"%FF%01%00%07%00%12%1A",
+        13:"%FF%01%00%07%00%13%1B",
+        14:"%FF%01%00%07%00%14%1C",
+        15:"%FF%01%00%07%00%15%1D",
+        16:"%FF%01%00%07%00%16%1E",
+        17:"%FF%01%00%07%00%17%1F",
+        18:"%FF%01%00%07%00%18%20",
+        19:"%FF%01%00%07%00%19%21",
+        20:"%FF%01%00%07%00%20%28",
+        21:"%FF%01%00%07%00%21%29",
+        22:"%FF%01%00%07%00%22%2A",
+        23:"%FF%01%00%07%00%23%2B",
+        24:"%FF%01%00%07%00%24%2C",
+        25:"%FF%01%00%07%00%25%2D",
+        26:"%FF%01%00%07%00%26%2E",
+        27:"%FF%01%00%07%00%27%2F",
+        28:"%FF%01%00%07%00%28%30",
+        29:"%FF%01%00%07%00%29%31",
+        30:"%FF%01%00%07%00%30%38",
+        31:"%FF%01%00%07%00%31%39",
+        32:"%FF%01%00%07%00%32%3A"
+    }
+
+
+# Move to only single preset position (Does not report to the beehive)
+def move_to_preset(pt_id, args):
+    '''
+    This function sends the curl command for the given preset position to the camera via subprocess. 
+    It returns the result of the "curl" command. 
+    Do not call it directly as this will not publish error messages in the beehive.
+    '''
+    preset_code = presets.get(pt_id)
+    if not preset_code:
+        print("Invalid preset number")
+        return -1
+
+    cmd = ["curl",
+        "-u",
+        args.user+':'+args.password,
+        "-X",
+        "POST",
+        "http://{}/control/rcontrol?action=putrs232&rs232outtext=".format(args.ip)+preset_code]
+
+    #print(cmd)
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.stdout
+
+    except subprocess.CalledProcessError as e:
+        print("Error: {}".format(e))
+        return e
+
+    return 0
+
+
 
 def extract_timestamp_and_filename(path: Path):
     timestamp_str, filename = path.name.split("_", 1)
@@ -98,29 +168,29 @@ def main(args):
             loops = loops + 1
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
+            for move_pos in args.preset:
+                # Run the Mobotix sampler
+                try:
+                    get_camera_frames(args, timeout=args.camera_timeout)
+                except timeout_decorator.timeout_decorator.TimeoutError:
+                    logging.warning(f"Timed out attempting to capture {args.frames} frames.")
+                    sys.exit("Exit error: Camera Timeout.")
+                except Exception as e:
+                    logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
+                    sys.exit("Exit error: Unknown Camera Exception.")
 
-            # Run the Mobotix sampler
-            try:
-                get_camera_frames(args, timeout=args.camera_timeout)
-            except timeout_decorator.timeout_decorator.TimeoutError:
-                logging.warning(f"Timed out attempting to capture {args.frames} frames.")
-                sys.exit("Exit error: Camera Timeout.")
-            except Exception as e:
-                logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
-                sys.exit("Exit error: Unknown Camera Exception.")
+                # upload files
+                for tspath in args.workdir.glob("*"):
+                    if tspath.suffix == ".rgb":
+                        tspath = convert_rgb_to_jpg(tspath)
+                        frames = frames + 1
 
-            # upload files
-            for tspath in args.workdir.glob("*"):
-                if tspath.suffix == ".rgb":
-                    tspath = convert_rgb_to_jpg(tspath)
-                    frames = frames + 1
+                    timestamp, path = extract_timestamp_and_filename(tspath)
+                    os.rename(tspath, path)
 
-                timestamp, path = extract_timestamp_and_filename(tspath)
-                os.rename(tspath, path)
-
-                logging.debug(path)
-                logging.debug(timestamp)
-                plugin.upload_file(path, timestamp=timestamp)
+                    logging.debug(path)
+                    logging.debug(timestamp)
+                    plugin.upload_file(path, timestamp=timestamp)
 
             logging.info(f"Processed {frames} frames")
             if loop_check(loops, args.loops):
@@ -140,6 +210,15 @@ if __name__ == "__main__":
         dest="ip",
         default=os.getenv("CAMERA_IP", ""),
         help="Camera IP or URL",
+    )
+    parser.add_argument(
+        "-pt",
+        "--preset",
+        dest="preset",
+        type=int, 
+        default= [i for j in range(4) for i in range(j+1, 33, 4)],
+        nargs="+",
+        help="preset locations for scanning"
     )
     parser.add_argument(
         "-u",
