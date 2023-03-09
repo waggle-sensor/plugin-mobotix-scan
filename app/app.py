@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 
-from mobotix import PTController, CameraSampler
+from mobotix import run_sampler, move_to_preset, convert_rgb_to_jpg
 from waggle.plugin import Plugin
 
 def loop_check(i, m):
@@ -20,9 +20,6 @@ def main(args):
         Calls sampler and mover functions 
     '''
 
-    camera_sampler = CameraSampler(args)
-    camera_scanner = PTController(args)
-
     loops = 0
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
@@ -32,10 +29,10 @@ def main(args):
                 logging.info(f"Loop {loops} of " +
                 ("infinite" if args.loops < 0 else str(args.loops)))
 
-                camera_sampler.run_sampler()
+                run_sampler(args)
 
                 #This move will exclude the last position but give more time for movement
-                status = camera_scanner.move_to_preset(move_pos)
+                status = move_to_preset(args, move_pos)
                 # publish move status to the beehive
                 plugin.publish('mobotix.move.status', status)
 
@@ -43,7 +40,7 @@ def main(args):
                 for tspath in args.workdir.glob("*"):
                     print(tspath)
                     if tspath.suffix == ".rgb":
-                        tspath = camera_sampler.convert_rgb_to_jpg(tspath)
+                        tspath = convert_rgb_to_jpg(tspath)
                         print(tspath)
                         # upload the file
                         logging.debug(f"Uploading {tspath}...")
