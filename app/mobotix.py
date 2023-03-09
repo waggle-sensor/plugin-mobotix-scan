@@ -149,8 +149,6 @@ class PTController:
     }
 
 
-
-
     def move_to_preset(self, preset_id):
         '''
         This function sends the curl command for the given preset position to the camera via subprocess. 
@@ -158,6 +156,7 @@ class PTController:
         Do not call it directly as this will not publish error messages in the beehive.
         '''
         preset_code = self.presets.get(preset_id)
+
         if not preset_code:
             print("Invalid preset number")
             return -1
