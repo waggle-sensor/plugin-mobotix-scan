@@ -87,7 +87,6 @@ def move_to_preset(pt_id, args):
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
-        time.sleep(args.interval)
         return result.stdout
 
     except subprocess.CalledProcessError as e:

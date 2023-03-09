@@ -64,6 +64,7 @@ def main(args):
                     logging.debug(path)
                     logging.debug(timestamp)
                     plugin.upload_file(path, timestamp=timestamp)
+                    time.sleep(3)
 
             logging.info(f"Processed {frames} frames")
             if loop_check(loops, args.loops):
