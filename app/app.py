@@ -64,7 +64,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--ip",
-        #required=True,
+        required=True,
         type=str,
         dest="ip",
         default=os.getenv("CAMERA_IP", ""),
@@ -74,7 +74,6 @@ if __name__ == "__main__":
         "-pt",
         "--preset",
         dest="preset",
-        #required=True,
         type=int, 
         default= [i for j in range(4) for i in range(j+1, 33, 4)],
         nargs="+",

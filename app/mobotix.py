@@ -90,10 +90,10 @@ def get_camera_frames(args):
 
 
 
-def run_sampler():
+def run_sampler(args):
     '''Run the Mobotix sampler'''
     try:
-        get_camera_frames()
+        get_camera_frames(args)
     except timeout_decorator.TimeoutError:
         logging.warning(f"Timed out attempting to capture a frame.")
         sys.exit("Exit error: Camera Timeout.")
