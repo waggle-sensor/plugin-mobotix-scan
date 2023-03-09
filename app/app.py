@@ -23,15 +23,18 @@ def main(args):
     loops = 0
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
+            scan_start = time.time()
             loops = loops + 1
-
-            for move_pos in args.preset:
-                logging.info(f"Loop {loops} of " +
+            logging.info(f"Loop {loops} of " +
                 ("infinite" if args.loops < 0 else str(args.loops)))
-
+            
+            for move_pos in args.preset:
+                #collect data and images
                 run_sampler(args)
 
-                #This move will exclude the last position but give more time for movement
+                #Then move the camera.
+                # This move will exclude the last position 
+                # but it is efficient more time for movement
                 status = move_to_preset(args, move_pos)
                 # publish move status to the beehive
                 plugin.publish('mobotix.move.status', status)
@@ -47,7 +50,12 @@ def main(args):
                         plugin.upload_file(str(tspath))
 
                 logging.info(f"Processed loop {loops}")
-                time.sleep(2) # For safety.
+                time.sleep(2) # Just to be safe.
+
+            scan_end = time.time()
+            plugin.publish('scan.dur.sec', scan_end-scan_start)
+            #sleep after the full scan
+            time.sleep(args.interval)
 
 
 
