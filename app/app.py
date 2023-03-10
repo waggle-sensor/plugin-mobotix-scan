@@ -22,6 +22,10 @@ from waggle.plugin import Plugin
 # camera image fetch timeout (seconds)
 DEFAULT_CAMERA_TIMEOUT = 120
 
+def append_path(filename, string):
+    filepath = Path(filename)
+    return filepath.parent / (filepath.stem + string + filepath.suffix)
+
 # Dictionary contains "presets" which maps preset position numbers to the 
 # corresponding string for curl command for that position. 
 presets = {
@@ -197,7 +201,7 @@ def main(args):
                     timestamp, path = extract_timestamp_and_filename(tspath)
 
                     #add move position in file name
-                    path='pt'+str(move_pos)+'_'+path
+                    path=append_path(path, '_position'+str(move_pos))
 
                     os.rename(tspath, path)
 
