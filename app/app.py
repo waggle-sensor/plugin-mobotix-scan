@@ -168,8 +168,14 @@ def main(args):
             loops = loops + 1
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
-            print(args.preset)
+
             for move_pos in args.preset:
+
+                # Move the caemra
+                status = move_to_preset(move_pos, args)
+                plugin.publish('mobotix.move.status', status)
+                time.sleep(1) #For Safety
+
                 # Run the Mobotix sampler
                 try:
                     get_camera_frames(args, timeout=args.camera_timeout)
@@ -180,8 +186,7 @@ def main(args):
                     logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
                     sys.exit("Exit error: Unknown Camera Exception.")
                 
-                status = move_to_preset(move_pos, args)
-                plugin.publish('mobotix.move.status', status)
+
 
                 # upload files
                 for tspath in args.workdir.glob("*"):
@@ -190,10 +195,19 @@ def main(args):
                         frames = frames + 1
 
                     timestamp, path = extract_timestamp_and_filename(tspath)
+
+                    #add move position in file name
+                    path='pt'+move_pos+'_'+path
+
                     os.rename(tspath, path)
 
                     logging.debug(path)
                     logging.debug(timestamp)
+                    meta={'this_position': move_pos,
+                          'prev_position':args.preset[frames-2],
+                          'next_position':args.preset[frames],
+                          'frame_num': frames+1,
+                          'loop_num':loops}
                     plugin.upload_file(path, timestamp=timestamp)
 
             logging.info(f"Processed {frames} frames")
@@ -277,7 +291,7 @@ if __name__ == "__main__":
         "--loopsleep",
         dest="loopsleep",
         type=int,
-        default=os.getenv("LOOP_SLEEP", 30),
+        default=os.getenv("LOOP_SLEEP", 300),
         help="Seconds to sleep in-between loops",
     )
 
