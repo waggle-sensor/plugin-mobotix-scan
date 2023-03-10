@@ -168,6 +168,7 @@ def main(args):
             loops = loops + 1
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
+            print(args.preset)
             for move_pos in args.preset:
                 # Run the Mobotix sampler
                 try:
@@ -178,6 +179,9 @@ def main(args):
                 except Exception as e:
                     logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
                     sys.exit("Exit error: Unknown Camera Exception.")
+                
+                status = move_to_preset(move_pos, args)
+                plugin.publish('mobotix.move.status', status)
 
                 # upload files
                 for tspath in args.workdir.glob("*"):
