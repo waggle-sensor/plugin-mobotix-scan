@@ -222,7 +222,7 @@ def main(args):
                     plugin.upload_file(path, meta=meta, timestamp=timestamp)
 
             scan_end = time.time()
-            plugin.publish('scan.duration', scan_end-scan_start)
+            plugin.publish('scan.duration.sec', scan_end-scan_start)
 
             logging.info(f"Processed {frames} frames")
             if loop_check(loops, args.loops):

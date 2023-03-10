@@ -1,10 +1,10 @@
 name: "mobotix-scan"
-description: "Captures & uploads frames and thermal data from a Mobotix thermal camera stream."
-version: "0.0001"
+description: "Scans preset position and captures Mobotix thermal data."
+version: "0.23.3.9"
 authors: "Bhupendra Raut <braut@anl.gov>"
-collaborators: "Bhupendra Raut, Dario Dematties Reyes, Joseph Swantek*, Neal Conrad, Nicola Ferrier, Pete Beckman, Raj Sankaran, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho Kim"
+collaborators: "Bhupendra Raut, Dario Dematties Reyes, Joseph Swantek, Neal Conrad, Nicola Ferrier, Pete Beckman, Raj Sankaran, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho Kim"
 funding: "NSF 1935984"
-license: "MIT license"
+license: "Gnu GPL v2 license"
 keywords: "Mobotix, raw, celsius, IR"
 homepage: "https://github.com/waggle-sensor/plugin-mobotix-scan"
 source:
@@ -15,6 +15,8 @@ source:
   branch: "main"
 inputs:
 - id: "-ip"
+  type: "string"
+  id: "pt"
   type: "string"
 - id: "u"
   type: "string"
@@ -30,4 +32,3 @@ inputs:
   type: "int"
 - id: "s"
   type: "int"
-
