@@ -22,6 +22,12 @@ from waggle.plugin import Plugin
 # camera image fetch timeout (seconds)
 DEFAULT_CAMERA_TIMEOUT = 120
 
+
+
+def loop_check(i, m):
+    return m < 0 or i < m
+
+
 def append_path(filename, string):
     filepath = Path(filename)
     return filepath.parent / (filepath.stem + string + filepath.suffix)
@@ -163,10 +169,10 @@ def get_camera_frames(args):
 
 
 def main(args):
-    def loop_check(i, m):
-        return m < 0 or i < m
-
     loops = 0
+    cam_positions = args.preset
+    cam_positions.append(0)
+
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
             loops = loops + 1
@@ -174,7 +180,7 @@ def main(args):
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
 
-            cam_positions = args.preset.append(0)  # this is for sending meta only.
+
 
             for move_pos in args.preset:
 
@@ -213,8 +219,8 @@ def main(args):
 
 
                     meta={'this_position': move_pos,
-                          'prev_position':args.preset[frames-2],
-                          'next_position':args.preset[frames],
+                          'prev_position':cam_positions[frames-2],
+                          'next_position':cam_positions[frames],
                           'frame_num': frames+1,
                           'loop_num':loops}
                     plugin.upload_file(path, timestamp=timestamp)
