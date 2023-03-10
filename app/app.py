@@ -170,15 +170,18 @@ def main(args):
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
             loops = loops + 1
+            scan_start = time.time()
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
+
+            cam_positions = args.preset.append(0)  # this is for sending meta only.
 
             for move_pos in args.preset:
 
                 # Move the caemra
                 status = move_to_preset(move_pos, args)
                 plugin.publish('mobotix.move.status', status)
-                time.sleep(1) #For Safety
+                time.sleep(3) #For Safety
 
                 # Run the Mobotix sampler
                 try:
@@ -207,12 +210,17 @@ def main(args):
 
                     logging.debug(path)
                     logging.debug(timestamp)
+
+
                     meta={'this_position': move_pos,
                           'prev_position':args.preset[frames-2],
                           'next_position':args.preset[frames],
                           'frame_num': frames+1,
                           'loop_num':loops}
                     plugin.upload_file(path, timestamp=timestamp)
+
+            scan_end = time.time()
+            plugin.publish('scan.duration', scan_end-scan_start)
 
             logging.info(f"Processed {frames} frames")
             if loop_check(loops, args.loops):
