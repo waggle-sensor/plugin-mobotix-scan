@@ -216,8 +216,8 @@ def main(args):
                     logging.debug(timestamp)
 
 
-                    meta={'position': move_pos,
-                          'loop_num':loops}
+                    meta={'position': str(move_pos),
+                          'loop_num':str(loops)}
                     
                     plugin.upload_file(path, meta=meta, timestamp=timestamp)
 
