@@ -217,9 +217,9 @@ def main(args):
 
 
                     meta={'position': move_pos,
-                          'frame_num': frames+1,
                           'loop_num':loops}
-                    plugin.upload_file(path, timestamp=timestamp)
+                    
+                    plugin.upload_file(path, meta=meta, timestamp=timestamp)
 
             scan_end = time.time()
             plugin.publish('scan.duration', scan_end-scan_start)
