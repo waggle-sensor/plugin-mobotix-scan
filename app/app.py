@@ -170,8 +170,6 @@ def get_camera_frames(args):
 
 def main(args):
     loops = 0
-    cam_positions = args.preset
-    cam_positions.append(0)
 
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
