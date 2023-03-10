@@ -197,7 +197,7 @@ def main(args):
                     timestamp, path = extract_timestamp_and_filename(tspath)
 
                     #add move position in file name
-                    path='pt'+move_pos+'_'+path
+                    path='pt'+str(move_pos)+'_'+path
 
                     os.rename(tspath, path)
 
