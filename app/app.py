@@ -200,7 +200,9 @@ def main(args):
                 # Move the caemra
                 status = move_to_preset(move_pos, args)
                 plugin.publish('mobotix.move.status', status)
-
+                
+                if status != 'OK':
+                    sys.exit(-1)
                 time.sleep(3) #For Safety
 
                 # Run the Mobotix sampler
