@@ -203,7 +203,7 @@ def main(args):
                     sys.exit(-1)
 
                 time.sleep(3) #For Safety
-
+                
                 # Run the Mobotix sampler
                 try:
                     get_camera_frames(args, timeout=args.camera_timeout)
