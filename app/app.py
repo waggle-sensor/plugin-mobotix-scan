@@ -25,10 +25,17 @@ DEFAULT_CAMERA_TIMEOUT = 120
 
 
 def loop_check(i, m):
+    '''
+    A unction to determine if the loop should continue based on the value of m 
+    (maximum number of iterations) and i (current iteration).'''
     return m < 0 or i < m
 
 
 def append_path(filename, string):
+    '''
+    Function takes a filename and a string and returns the filepath 
+    with the string appended to the stem.
+    '''
     filepath = Path(filename)
     return filepath.parent / (filepath.stem + string + filepath.suffix)
 
@@ -75,7 +82,6 @@ def move_to_preset(pt_id, args):
     '''
     This function sends the curl command for the given preset position to the camera via subprocess. 
     It returns the result of the "curl" command. 
-    Do not call it directly as this will not publish error messages in the beehive.
     '''
     preset_code = presets.get(pt_id)
     if not preset_code:
@@ -104,16 +110,25 @@ def move_to_preset(pt_id, args):
 
 
 def extract_timestamp_and_filename(path: Path):
+    '''
+    extracts the timestamp and filename from the given path.
+    '''
     timestamp_str, filename = path.name.split("_", 1)
     timestamp = int(timestamp_str)
     return timestamp, path.with_name(filename)
 
 
 def extract_resolution(path: Path) -> str:
+    '''
+    extracts the resolution from the given path
+    '''
     return re.search("\d+x\d+", path.stem).group()
 
 
 def convert_rgb_to_jpg(fname_rgb: Path):
+    '''
+    function converts a .rgb file to a .jpg file using ffmpeg.
+    '''
     fname_jpg = fname_rgb.with_suffix(".jpg")
     image_dims = extract_resolution(fname_rgb)
     subprocess.run(
@@ -185,6 +200,7 @@ def main(args):
                 # Move the caemra
                 status = move_to_preset(move_pos, args)
                 plugin.publish('mobotix.move.status', status)
+
                 time.sleep(3) #For Safety
 
                 # Run the Mobotix sampler
@@ -207,9 +223,8 @@ def main(args):
 
                     timestamp, path = extract_timestamp_and_filename(tspath)
 
-                    #add move position in file name
+                    #add move position to file name
                     path=append_path(path, '_position'+str(move_pos))
-
                     os.rename(tspath, path)
 
                     logging.debug(path)
