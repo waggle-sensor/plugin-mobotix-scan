@@ -193,16 +193,15 @@ def main(args):
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
 
-
-
             for move_pos in args.preset:
 
                 # Move the caemra
                 status = move_to_preset(move_pos, args)
                 plugin.publish('mobotix.move.status', status)
-                
-                if status != 'OK':
+
+                if status.strip() != str('OK'):
                     sys.exit(-1)
+
                 time.sleep(3) #For Safety
 
                 # Run the Mobotix sampler
