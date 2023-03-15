@@ -13,10 +13,11 @@ source:
     - "linux/arm64"
   url: "https://github.com/waggle-sensor/plugin-mobotix-scan"
   branch: "main"
+
 inputs:
 - id: "-ip"
   type: "string"
-  id: "pt"
+- id: "pt"
   type: "string"
 - id: "u"
   type: "string"
@@ -32,3 +33,4 @@ inputs:
   type: "int"
 - id: "s"
   type: "int"
+
