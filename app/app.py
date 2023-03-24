@@ -4,6 +4,10 @@ Created on Mon Dec 13 11:05:11 2021
 
 1. Runs the Mobotix C++ sampler with the given arguments.
 2. The .rgb files are too large, so we used ffmpeg to convert to JPG.
+3. It performs a loop through a list of camera presets to move the camera,
+captures frames, and uploads them to a plugin instance.  
+4. The script exits when the loop is complete.
+5. Errors are logged to beehive and the loop sleeps between iterations.
 """
 
 import argparse
@@ -189,6 +193,8 @@ def main(args):
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
             loops = loops + 1
+            plugin.publish('loop.num', loops)
+            
             scan_start = time.time()
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
@@ -200,18 +206,30 @@ def main(args):
                 plugin.publish('mobotix.move.status', status)
 
                 if status.strip() != str('OK'):
+                    scan_end = time.time()
+                    plugin.publish('scan.duration.sec', scan_end-scan_start)
+                    plugin.publish('exit.status', 'Scan_Error')
                     sys.exit(-1)
 
                 time.sleep(3) #For Safety
                 
                 # Run the Mobotix sampler
                 try:
+                    capture_start = time.time()
                     get_camera_frames(args, timeout=args.camera_timeout)
+                    capture_end = time.time()
+                    plugin.publish('capture.duration.sec', capture_end-capture_start)
                 except timeout_decorator.timeout_decorator.TimeoutError:
                     logging.warning(f"Timed out attempting to capture {args.frames} frames.")
+                    scan_end = time.time()
+                    plugin.publish('scan.duration.sec', scan_end-scan_start)
+                    plugin.publish('exit.status', 'Camera_Timeout')
                     sys.exit("Exit error: Camera Timeout.")
                 except Exception as e:
                     logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
+                    scan_end = time.time()
+                    plugin.publish('scan.duration.sec', scan_end-scan_start)
+                    plugin.publish('exit.status', e)
                     sys.exit("Exit error: Unknown Camera Exception.")
                 
 
@@ -244,6 +262,10 @@ def main(args):
             if loop_check(loops, args.loops):
                 logging.info(f"Sleeping for {args.loopsleep} seconds between loops")
                 time.sleep(args.loopsleep)
+
+        
+        plugin.publish('exit.status', 'Loop_Complete')
+
 
 
 if __name__ == "__main__":
