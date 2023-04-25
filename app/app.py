@@ -288,7 +288,7 @@ if __name__ == "__main__":
         type=int, 
         default= [i for j in range(4) for i in range(j+1, 33, 4)],
         nargs="+",
-        help="preset locations for scanning. (0 for nonPTZ cameras.)"
+        help="preset locations for scanning. (0 for non-scaning mode .)"
     )
     parser.add_argument(
         "-u",
