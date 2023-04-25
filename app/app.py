@@ -290,6 +290,7 @@ if __name__ == "__main__":
         nargs="+",
         help="preset locations for scanning. (0 for non-scaning mode .)"
     )
+    
     parser.add_argument(
         "-u",
         "--user",
