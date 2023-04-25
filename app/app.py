@@ -200,18 +200,18 @@ def main(args):
             frames = 0
 
             for move_pos in args.preset:
+                if args.preset[0]!=0:
+                    # Move the caemra if scan is requested
+                    status = move_to_preset(move_pos, args)
+                    plugin.publish('mobotix.move.status', status)
 
-                # Move the caemra
-                status = move_to_preset(move_pos, args)
-                plugin.publish('mobotix.move.status', status)
+                    if status.strip() != str('OK'):
+                        scan_end = time.time()
+                        plugin.publish('scan.duration.sec', scan_end-scan_start)
+                        plugin.publish('exit.status', 'Scan_Error')
+                        sys.exit(-1)
 
-                if status.strip() != str('OK'):
-                    scan_end = time.time()
-                    plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', 'Scan_Error')
-                    sys.exit(-1)
-
-                time.sleep(3) #For Safety
+                    time.sleep(3) #For Safety
                 
                 # Run the Mobotix sampler
                 try:
@@ -288,7 +288,7 @@ if __name__ == "__main__":
         type=int, 
         default= [i for j in range(4) for i in range(j+1, 33, 4)],
         nargs="+",
-        help="preset locations for scanning"
+        help="preset locations for scanning. (0 for nonPTZ cameras.)"
     )
     parser.add_argument(
         "-u",
