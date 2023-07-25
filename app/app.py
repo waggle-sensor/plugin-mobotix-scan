@@ -22,7 +22,10 @@ from select import select
 
 import timeout_decorator
 from waggle.plugin import Plugin
+
 from MobotixControl import MobotixControl
+from MobotixSample import MobotixSample
+
 
 # camera image fetch timeout (seconds)
 DEFAULT_CAMERA_TIMEOUT = 120
@@ -124,6 +127,7 @@ def main(args):
 
     # Instantiate the MobotixControl class for movement of the camera
     mobot_ctl = MobotixControl(args.user, args.password, args.ip)
+    camera = MobotixSample(args.ip, args.user, args.password, args.workdir, args.frames)
 
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
@@ -152,7 +156,7 @@ def main(args):
                 # Run the Mobotix sampler
                 try:
                     capture_start = time.time()
-                    get_camera_frames(args, timeout=args.camera_timeout)
+                    camera.capture()
                     capture_end = time.time()
                     plugin.publish('capture.duration.sec', capture_end-capture_start)
                 except timeout_decorator.timeout_decorator.TimeoutError:
@@ -167,13 +171,11 @@ def main(args):
                     plugin.publish('scan.duration.sec', scan_end-scan_start)
                     plugin.publish('exit.status', e)
                     sys.exit("Exit error: Unknown Camera Exception.")
-                
 
 
                 # upload files
                 for tspath in args.workdir.glob("*"):
-                    if tspath.suffix == ".rgb":
-                        tspath = convert_rgb_to_jpg(tspath)
+                    if tspath.suffix == ".jpg":
                         frames = frames + 1
 
                     timestamp, path = extract_timestamp_and_filename(tspath)
