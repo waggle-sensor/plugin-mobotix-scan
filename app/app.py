@@ -22,7 +22,7 @@ from select import select
 
 import timeout_decorator
 from waggle.plugin import Plugin
-import MobotixControl
+from MobotixControl import MobotixControl
 
 # camera image fetch timeout (seconds)
 DEFAULT_CAMERA_TIMEOUT = 120
@@ -138,7 +138,7 @@ def main(args):
                 if args.preset[0]!=0:
                     # Move the caemra if scan is requested
                     status = mobot_ctl.move_to_preset(move_pos)
-                    
+
                     plugin.publish('mobotix.move.status', status)
 
                     if status.strip() != str('OK'):
