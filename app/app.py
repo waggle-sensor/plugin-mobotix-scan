@@ -13,8 +13,6 @@ captures frames, and uploads them to a plugin instance.
 import argparse
 import logging
 import os
-import re
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -23,13 +21,11 @@ from select import select
 import timeout_decorator
 from waggle.plugin import Plugin
 
-from MobotixControl import MobotixControl
-from MobotixSample import MobotixSample
-
+from MobotixControl import MobotixPT, MobotixImager
 
 def loop_check(i, m):
     '''
-    A unction to determine if the loop should continue based on the value of m 
+    A function to determine if the loop should continue based on the value of m 
     (maximum number of iterations) and i (current iteration).'''
     return m < 0 or i < m
 
@@ -47,8 +43,8 @@ def main(args):
     loops = 0
 
     # Instantiate the MobotixControl and  mobotix camera class for movement of the camera
-    mobot_ctl = MobotixControl(args.user, args.password, args.ip)
-    camera = MobotixSample(args.ip, args.user, args.password, args.workdir, args.frames)
+    mobot_pt = MobotixPT(args.user, args.password, args.ip)
+    mobot_im = MobotixImager(args.ip, args.user, args.password, args.workdir, args.frames)
 
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
@@ -62,7 +58,7 @@ def main(args):
             for move_pos in args.preset:
                 if args.preset[0]!=0:
                     # Move the caemra if scan is requested
-                    status = mobot_ctl.move_to_preset(move_pos)
+                    status = mobot_pt.move_to_preset(move_pos)
 
                     plugin.publish('mobotix.move.status', status)
 
@@ -77,7 +73,7 @@ def main(args):
                 # Run the Mobotix sampler
                 try:
                     capture_start = time.time()
-                    camera.capture()
+                    mobot_im.capture()
                     capture_end = time.time()
                     plugin.publish('capture.duration.sec', capture_end-capture_start)
                 except timeout_decorator.timeout_decorator.TimeoutError:
@@ -99,7 +95,7 @@ def main(args):
                     if tspath.suffix == ".jpg":
                         frames = frames + 1
 
-                    timestamp, path = camera.extract_timestamp_and_filename(tspath)
+                    timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
 
                     #add move position to file name
                     path=append_path(path, '_position'+str(move_pos))
@@ -181,14 +177,6 @@ if __name__ == "__main__":
         type=int,
         default=os.getenv("FRAMES_PER_LOOP", 1),
         help="Frames to capture per loop",
-    )
-    parser.add_argument(
-        "-t",
-        "--timeout",
-        dest="camera_timeout",
-        type=int,
-        default=os.getenv("CAMERA_TIMEOUT", DEFAULT_CAMERA_TIMEOUT),
-        help="Max time (in seconds) to capture frames from camera per loop",
     )
     parser.add_argument(
         "-l",
