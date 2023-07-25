@@ -13,7 +13,7 @@ DEFAULT_CAMERA_TIMEOUT = 120
 
 
 class MobotixSample():
-    def __init__(self, ip, user, passwd, workdir, frames=1):
+    def __init__(self, ip, user, passwd, workdir, frames):
         super().__init__()
         self.ip = ip
         self.user = user
@@ -93,7 +93,7 @@ class MobotixSample():
         for tspath in self.workdir.glob("*"):
             if tspath.suffix == ".rgb":
                 tspath = self.convert_rgb_to_jpg(tspath)
-                self.frames = self.frames + 1
+
 
                 
 

@@ -27,11 +27,6 @@ from MobotixControl import MobotixControl
 from MobotixSample import MobotixSample
 
 
-# camera image fetch timeout (seconds)
-DEFAULT_CAMERA_TIMEOUT = 120
-
-
-
 def loop_check(i, m):
     '''
     A unction to determine if the loop should continue based on the value of m 
@@ -48,84 +43,10 @@ def append_path(filename, string):
     return filepath.parent / (filepath.stem + string + filepath.suffix)
 
 
-def extract_timestamp_and_filename(path: Path):
-    '''
-    extracts the timestamp and filename from the given path.
-    '''
-    timestamp_str, filename = path.name.split("_", 1)
-    timestamp = int(timestamp_str)
-    return timestamp, path.with_name(filename)
-
-
-def extract_resolution(path: Path) -> str:
-    '''
-    extracts the resolution from the given path
-    '''
-    return re.search("\d+x\d+", path.stem).group()
-
-
-def convert_rgb_to_jpg(fname_rgb: Path):
-    '''
-    function converts a .rgb file to a .jpg file using ffmpeg.
-    '''
-    fname_jpg = fname_rgb.with_suffix(".jpg")
-    image_dims = extract_resolution(fname_rgb)
-    subprocess.run(
-        [
-            "ffmpeg",
-            "-f",
-            "rawvideo",
-            "-pixel_format",
-            "bgra",
-            "-video_size",
-            image_dims,
-            "-i",
-            str(fname_rgb),
-            str(fname_jpg),
-        ],
-        check=True,
-    )
-
-    logging.debug("Removing %s", fname_rgb)
-    fname_rgb.unlink()
-    return fname_jpg
-
-
-@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
-def get_camera_frames(args):
-    cmd = [
-        "/thermal-raw",
-        "--url",
-        args.ip,
-        "--user",
-        args.user,
-        "--password",
-        args.password,
-        "--dir",
-        str(args.workdir),
-    ]
-    logging.info(f"Calling camera interface: {cmd}")
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
-        while True:
-            pollresults = select([process.stdout], [], [], 5)[0]
-            if not pollresults:
-                logging.warning("Timeout waiting for camera interface output")
-                continue
-            output = pollresults[0].readline()
-            if not output:
-                logging.warning("No data from camera interface output")
-                continue
-            m = re.search("frame\s#(\d+)", output.strip().decode())
-            logging.info(output.strip().decode())
-            if m and int(m.groups()[0]) > args.frames:
-                logging.info("Max frame count reached, closing camera capture")
-                return
-
-
 def main(args):
     loops = 0
 
-    # Instantiate the MobotixControl class for movement of the camera
+    # Instantiate the MobotixControl and  mobotix camera class for movement of the camera
     mobot_ctl = MobotixControl(args.user, args.password, args.ip)
     camera = MobotixSample(args.ip, args.user, args.password, args.workdir, args.frames)
 
@@ -178,7 +99,7 @@ def main(args):
                     if tspath.suffix == ".jpg":
                         frames = frames + 1
 
-                    timestamp, path = extract_timestamp_and_filename(tspath)
+                    timestamp, path = camera.extract_timestamp_and_filename(tspath)
 
                     #add move position to file name
                     path=append_path(path, '_position'+str(move_pos))
