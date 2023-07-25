@@ -9,7 +9,7 @@ import timeout_decorator
 from waggle.plugin import Plugin
 
 # camera image fetch timeout (seconds)
-DEFAULT_CAMERA_TIMEOUT = 120
+DEFAULT_CAMERA_TIMEOUT = 30
 
 
 class MobotixSample():
