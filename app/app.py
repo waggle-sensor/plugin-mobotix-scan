@@ -40,6 +40,11 @@ def append_path(filename, string):
 
 
 def main(args):
+    '''
+    Runs Mobotix sampler to capture frames from the camera, 
+    and uploads them to beehive. It loops through a list of preset position, moving the 
+    camera to given positions. The number of loops can be specified.
+    '''
     loops = 0
 
     # Instantiate the Mobotix PT and  camera imager class for movement of the camera
@@ -47,8 +52,8 @@ def main(args):
     mobot_im = MobotixImager(args.ip, args.user, args.password, args.workdir, args.frames)
 
     with Plugin() as plugin:
-        while loop_check(loops, args.loops):
-            loops = loops + 1
+        for loops, _ in enumerate(range(args.loops), start=1):
+            #loops = loops + 1
             plugin.publish('loop.num', loops)
             
             scan_start = time.time()
@@ -98,7 +103,7 @@ def main(args):
                     timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
 
                     #add move position to file name
-                    path=append_path(path, '_position'+str(move_pos))
+                    path=append_path(path, f'_position{move_pos}')
                     os.rename(tspath, path)
 
                     logging.debug(path)

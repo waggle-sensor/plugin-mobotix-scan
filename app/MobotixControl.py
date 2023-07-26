@@ -17,6 +17,13 @@ DEFAULT_CAMERA_TIMEOUT = 30
 DEFAULT_MOVEMENT_TIMEOUT = 15
 
 class MobotixPT:
+    ''' A class representing Mobotix Pan-Tilt camera control.
+
+    Parameters:
+        user (str): Camera user ID.
+        passwd (str): Camera password.
+        ip (str): Camera IP or URL.
+    '''
     def __init__(self, user, passwd, ip):
         self.user = user
         self.passwd = passwd
@@ -106,6 +113,7 @@ class MobotixPT:
             return e
 
     def move_to_preset(self, pt_id):
+        '''Moves the camera to the specified preset location.'''
         preset_code = self.presets.get(pt_id)
         if preset_code:
             return self._send_command(preset_code)
@@ -113,6 +121,9 @@ class MobotixPT:
             return "Invalid preset ID."
 
     def move(self, direction, speed, duration):
+        '''
+        Moves the camera in the specified direction at the
+          given speed and duration.'''
         code = self.speed_codes[direction].get(speed)
         if code:
             self._send_command(code)
@@ -123,10 +134,12 @@ class MobotixPT:
         
 
     def stop(self):
+        '''Stops the camera movement.'''
         code = '%FF%01%00%00%00%00%01'
         return self._send_command(code)
 
     def remote_reset(self):
+        '''Remote reset of the camera moves it to home position.'''
         code = '%FF%01%00%0F%00%00%10'
         return self._send_command(code)
 
@@ -135,6 +148,15 @@ class MobotixPT:
 
 
 class MobotixImager():
+    ''' A class for capturing frames and processsing image data.
+
+    Parameters:
+        ip (str): Camera IP or URL.
+        user (str): Camera user ID.
+        passwd (str): Camera password.
+        workdir (str or Path): Directory to cache camera data before publishing to beehive.
+        frames (int): Number of frames to capture in each attempt.
+'''
     def __init__(self, ip, user, passwd, workdir, frames):
         super().__init__()
         self.ip = ip
@@ -144,11 +166,13 @@ class MobotixImager():
         self.frames = frames
 
     def extract_timestamp_and_filename(self, path: Path):
+        '''Extracts timestamp and filename from mobotix file path.'''
         timestamp_str, filename = path.name.split("_", 1)
         timestamp = int(timestamp_str)
         return timestamp, path.with_name(filename)
 
-    def extract_resolution(self, path: Path) -> str:
+    def extract_resolution(self, path: Path):
+        '''Extracts image resolution from the file name.'''
         return re.search("\d+x\d+", path.stem).group()
 
     def convert_rgb_to_jpg(self, fname_rgb: Path):
@@ -176,6 +200,10 @@ class MobotixImager():
 
     @timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
     def get_camera_frames(self):
+        '''Calls the camera interface to capture frames and 
+        stores them in the working directory.
+        '''
+
         cmd = [
             "/thermal-raw",
             "--url",
@@ -205,6 +233,8 @@ class MobotixImager():
                     return
 
     def capture(self):
+        '''Captures frames from the camera, converts them to JPG, 
+        and stores them in the working directory.'''
         try:
             self.workdir.mkdir(parents=True, exist_ok=True)
             self.get_camera_frames()
