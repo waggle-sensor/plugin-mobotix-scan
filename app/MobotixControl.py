@@ -108,7 +108,7 @@ class MobotixPT:
             result = subprocess.run(cmd, capture_output=True, text=True)
             
             if result.stdout.strip() != 'OK':
-                raise Exception(f"INVALID_CREDENTIALS:{result.stdout}")
+                raise Exception(f"INVALID_CREDENTIALS_OR_CONNECTION_ERROR:{result.stdout}")
             else:
                 return result.stdout
 
@@ -249,6 +249,8 @@ class MobotixImager():
         for tspath in self.workdir.glob("*"):
             if tspath.suffix == ".rgb":
                 tspath = self.convert_rgb_to_jpg(tspath)
+
+        return tspath
 
 
                 
