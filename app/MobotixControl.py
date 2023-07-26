@@ -106,7 +106,11 @@ class MobotixPT:
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True)
-            return result.stdout
+            
+            if result.stdout.strip() != 'OK':
+                raise Exception(f"INVALID_CREDENTIALS:{result.stdout}")
+            else:
+                return result.stdout
 
         except subprocess.CalledProcessError as e:
             print("Error: {}".format(e))
