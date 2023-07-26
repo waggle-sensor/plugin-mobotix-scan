@@ -42,7 +42,7 @@ def append_path(filename, string):
 def main(args):
     loops = 0
 
-    # Instantiate the MobotixControl and  mobotix camera class for movement of the camera
+    # Instantiate the Mobotix PT and  camera imager class for movement of the camera
     mobot_pt = MobotixPT(args.user, args.password, args.ip)
     mobot_im = MobotixImager(args.ip, args.user, args.password, args.workdir, args.frames)
 
