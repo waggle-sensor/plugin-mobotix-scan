@@ -130,12 +130,15 @@ def main(args):
 def parse_preset_arg(arg):
     '''This is to handle the parsing of the list of integers.'''
     try:
-        pt = [int(p) for p in arg.split(',')]
-        pt = [item for sublist in pt for item in sublist]
-        return pt
+        return [int(p) for p in arg.split(',')]
     except ValueError:
         raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
+def default_preset():
+    '''This is creating comma separated string from the  list.'''
+    int_list = [i for j in range(4) for i in range(j+1, 33, 4)]
+    int_string = ', '.join(map(str, int_list))
+    return int_string
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -155,7 +158,7 @@ if __name__ == "__main__":
         "--preset",
         dest="preset",
         type=parse_preset_arg,
-        default= [i for j in range(4) for i in range(j+1, 33, 4)],
+        default= default_preset(),
         nargs="+",
         help="preset locations for scanning. (0 for non-scaning mode .)"
     )
