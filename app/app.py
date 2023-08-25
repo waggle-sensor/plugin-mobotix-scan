@@ -52,8 +52,8 @@ def main(args):
     mobot_im = MobotixImager(args.ip, args.user, args.password, args.workdir, args.frames)
 
     with Plugin() as plugin:
-        for loops, _ in enumerate(range(args.loops), start=1):
-            #loops = loops + 1
+        while loop_check(loops, args.loops):
+            loops = loops + 1
             plugin.publish('loop.num', loops)
             
             scan_start = time.time()
@@ -130,7 +130,9 @@ def main(args):
 def parse_preset_arg(arg):
     '''This is to handle the parsing of the list of integers.'''
     try:
-        return [int(p) for p in arg.split(',')]
+        pt = [int(p) for p in arg.split(',')]
+        pt = [item for sublist in pt for item in sublist]
+        return pt
     except ValueError:
         raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
