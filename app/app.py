@@ -127,6 +127,13 @@ def main(args):
         plugin.publish('exit.status', 'Loop_Complete')
 
 
+def parse_preset_arg(arg):
+    '''This is to handle the parsing of the list of integers.'''
+    try:
+        return [int(p) for p in arg.split(',')]
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -145,7 +152,7 @@ if __name__ == "__main__":
         "-pt",
         "--preset",
         dest="preset",
-        type=int, 
+        type=parse_preset_arg,
         default= [i for j in range(4) for i in range(j+1, 33, 4)],
         nargs="+",
         help="preset locations for scanning. (0 for non-scaning mode .)"
