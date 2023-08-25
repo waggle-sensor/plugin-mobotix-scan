@@ -202,7 +202,7 @@ class MobotixImager():
         fname_rgb.unlink()
         return fname_jpg
 
-    @timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
+    #@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
     def get_camera_frames(self):
         '''Calls the camera interface to capture frames and 
         stores them in the working directory.
