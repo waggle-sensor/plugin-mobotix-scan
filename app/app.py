@@ -138,7 +138,7 @@ def main(args):
 
 
 def default_preset():
-    '''This is creating comma separated string from the  list.'''
+    '''Creating comma separated string of ints for default movement.'''
     int_list = [i for j in range(4) for i in range(j+1, 33, 4)]
     int_string = ', '.join(map(str, int_list))
     return int_string

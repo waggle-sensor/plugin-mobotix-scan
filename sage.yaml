@@ -1,6 +1,6 @@
 name: "mobotix-scan"
 description: "Scans preset position and captures Mobotix thermal data."
-version: "0.23.4.24"
+version: "0.23.8.25"
 authors: "Bhupendra Raut <braut@anl.gov>"
 collaborators: "Bhupendra Raut, Dario Dematties Reyes, Joseph Swantek, Neal Conrad, Nicola Ferrier, Pete Beckman, Raj Sankaran, Robert Jackson, Scott Collis, Sean Shahkarami, Seongha Park, Sergey Shemyakin, Wolfgang Gerlach, Yongho Kim"
 funding: "NSF 1935984"

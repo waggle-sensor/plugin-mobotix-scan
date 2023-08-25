@@ -10,12 +10,12 @@ To execute the plugin use the following (from within the built `Docker` containe
 ```
 python3 /app/app.py --ip ip_address -pt locations --user username --password password 
 ```
-    `ip_address`: The IP address or URL of the camera.
-    `username`: The user ID of the camera.
-     `password`: The password of the camera.
-    `interval`: Interval between the loops in seconds (optional, defaults to 300 Seconds).
-     `loops`: Scanning loops to perform (optional, defaults to -1=infinite).
-    `location`: The preset location ID of the camera (optional, defaults to scanning mode).
+    ip_address: The IP address or URL of the camera.
+    username: The user ID of the camera.
+    password: The password of the camera.
+    interval: Interval between the loops in seconds (optional, defaults to 300 Seconds).
+    loops: Scanning loops to perform (optional, defaults to -1=infinite).
+    preset: The preset location ID of the camera (optional, defaults to scanning mode).
 
 
 Example:
@@ -23,8 +23,18 @@ Example:
 ```
 python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 5
 ```
-
 This moves camera with ip 10.11.12.13 to preset point 5.
+
+
+```
+python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 1,6,4,8
+```
+This moves camera to preset point 1,6,4,8 and captures images.
+
+```
+python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 0
+```
+This will capture images but without moving the camera.
 
 ### Development
 
