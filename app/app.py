@@ -38,6 +38,14 @@ def append_path(filename, string):
     filepath = Path(filename)
     return filepath.parent / (filepath.stem + string + filepath.suffix)
 
+def parse_preset_arg(arg):
+    '''This is to handle the parsing of the string of integers.'''
+    try:
+        pt = [int(p) for p in arg.split(',')]
+        return pt
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
+
 
 def main(args):
     '''
@@ -59,8 +67,9 @@ def main(args):
             scan_start = time.time()
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
+            presets = parse_preset_arg(args.preset) # gert a list from string
 
-            for move_pos in args.preset:
+            for move_pos in presets:
                 if args.preset[0]!=0:
                     # Move the caemra if scan is requested
                     status = mobot_pt.move_to_preset(move_pos)
@@ -127,13 +136,6 @@ def main(args):
         plugin.publish('exit.status', 'Loop_Complete')
 
 
-def parse_preset_arg(arg):
-    '''This is to handle the parsing of the list of integers.'''
-    try:
-        pt = [int(p) for p in arg.split(',')]
-        return pt
-    except ValueError:
-        raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
 def default_preset():
     '''This is creating comma separated string from the  list.'''
@@ -159,10 +161,9 @@ if __name__ == "__main__":
         "-pt",
         "--preset",
         dest="preset",
-        type=parse_preset_arg,
+        type=str,
         default= default_preset(),
-        nargs="+",
-        help="preset locations for scanning. (0 for non-scaning mode .)"
+        help="preset locations for scanning, as a comma-separated string. (0 for non-scaning mode.)"
     )
     
     parser.add_argument(
