@@ -70,7 +70,7 @@ def main(args):
             presets = parse_preset_arg(args.preset) # gert a list from string
 
             for move_pos in presets:
-                if args.preset[0]!=0:
+                if presets[0]!=0:
                     # Move the caemra if scan is requested
                     status = mobot_pt.move_to_preset(move_pos)
 
