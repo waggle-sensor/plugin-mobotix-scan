@@ -47,94 +47,163 @@ def parse_preset_arg(arg):
         raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
 
-def main(args):
-    '''
-    Runs Mobotix sampler to capture frames from the camera, 
-    and uploads them to beehive. It loops through a list of preset position, moving the 
-    camera to given positions. The number of loops can be specified.
-    '''
-    loops = 0
+def generate_dense_image_path(tspath, preset, image_num, direction, speed, duration):
+    """
+    Generate a new image path based on the provided parameters.
+    """
+    formatted_dir = {'right': 'r', 'left': 'l', 'up': 'u', 'down': 'd'}.get(direction, 'x')
+    formatted_speed = str(speed)
+    formatted_duration = f"{duration:.1f}sec"
 
-    # Instantiate the Mobotix PT and  camera imager class for movement of the camera
+    new_name = f"{preset}-{image_num + 1}-{formatted_dir}-{formatted_speed}-{formatted_duration}.jpg"
+    new_path = tspath.parent / new_name
+    
+    return new_path
+
+
+def capture_and_process_image(args, mobot_im, preset, image_num, direction, speed, duration):
+    try:
+        capture_start = time.time()
+        mobot_im.capture()
+        capture_end = time.time()
+        duration = capture_end - capture_start
+    except timeout_decorator.timeout_decorator.TimeoutError as e:
+        return None, duration, "Camera_Timeout"
+    except Exception as e:
+        return None, duration, str(e)
+
+    for tspath in args.workdir.glob("*"):
+        if tspath.suffix == ".jpg":
+            timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
+
+            new_path = generate_dense_image_path(tspath, preset, image_num, direction, speed, duration)
+            os.rename(tspath, new_path)
+
+            return new_path, timestamp
+
+    return 
+
+
+def initialize_mobotix(args):
     mobot_pt = MobotixPT(args.user, args.password, args.ip)
     mobot_im = MobotixImager(args.ip, args.user, args.password, args.workdir, args.frames)
+    return mobot_pt, mobot_im
+
+
+def capture_image(mobot_im, frames):
+    try:
+        capture_start = time.time()
+        mobot_im.capture()
+        capture_end = time.time()
+        return True, capture_end - capture_start
+    except timeout_decorator.timeout_decorator.TimeoutError:
+        logging.warning(f"Timed out attempting to capture {frames} frames.")
+        return False, None
+    except Exception as e:
+        logging.warning(f"Unknown exception {e} during capture of {frames} frames.")
+        return False, None
+
+
+def process_image_for_presets(tspath, mobot_im, move_pos):
+    if tspath.suffix == ".jpg":
+        timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
+        path = append_path(path, f'_position{move_pos}')
+        os.rename(tspath, path)
+        return path, timestamp
+    return None, None
+
+
+def upload_image(plugin, path, loop_num, position, timestamp):
+    meta = {'position': str(position), 'loop_num': str(loop_num)}
+    plugin.upload_file(path, meta=meta, timestamp=timestamp)
+
+
+def dense_scan(args, direction, speed, duration, num_images=20):
+    loops = 0
+    mobot_pt, mobot_im = initialize_mobotix(args)
+
+    with Plugin() as plugin:
+        while loop_check(loops, num_images):
+            loops += 1
+            plugin.publish('loop.num', loops)
+            scan_start = time.time()
+            presets = args.preset
+
+            status = mobot_pt.move_to_preset(presets)
+            if status.strip() != "OK":
+                plugin.publish('exit.status', 'Scan_Error:' + status)
+                sys.exit(-1)
+
+            frames = 0
+            for image_num in range(num_images):
+                success, duration = capture_image(mobot_im, args.frames)
+                if success:
+                    plugin.publish('capture.duration.sec', duration)
+                    new_path, timestamp = process_image_for_presets(
+                        next(args.workdir.glob("*")), mobot_im, presets[0])
+                    if new_path:
+                        frames += 1
+                        upload_image(plugin, new_path, loops, presets[0], timestamp)
+                mobot_pt.move(direction, speed, duration)
+            
+            plugin.publish('scan.duration.sec', time.time() - scan_start)
+            if loop_check(loops, num_images):
+                time.sleep(3)
+
+        plugin.publish('exit.status', 'Dense_Scan_Complete')
+
+
+def scan_presets(args):
+    loops = 0
+    mobot_pt, mobot_im = initialize_mobotix(args)
 
     with Plugin() as plugin:
         while loop_check(loops, args.loops):
-            loops = loops + 1
-            plugin.publish('loop.num', loops)
-            
+            loops += 1
             scan_start = time.time()
-            logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
-            frames = 0
-            presets = parse_preset_arg(args.preset) # gert a list from string
+            presets = parse_preset_arg(args.preset)
 
             for move_pos in presets:
-                if presets[0]!=0:
-                    # Move the caemra if scan is requested
-                    status = mobot_pt.move_to_preset(move_pos)
+                status = mobot_pt.move_to_preset(move_pos)
+                if status.strip() != 'OK':
+                    plugin.publish('exit.status', 'Scan_Error')
+                    sys.exit(-1)
 
-                    plugin.publish('mobotix.move.status', status)
-
-                    if status.strip() != str('OK'):
-                        scan_end = time.time()
-                        plugin.publish('scan.duration.sec', scan_end-scan_start)
-                        plugin.publish('exit.status', 'Scan_Error')
-                        sys.exit(-1)
-
-                    time.sleep(3) #For Safety
-                
-                # Run the Mobotix sampler
-                try:
-                    capture_start = time.time()
-                    mobot_im.capture()
-                    capture_end = time.time()
-                    plugin.publish('capture.duration.sec', capture_end-capture_start)
-                except timeout_decorator.timeout_decorator.TimeoutError:
-                    logging.warning(f"Timed out attempting to capture {args.frames} frames.")
-                    scan_end = time.time()
-                    plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', 'Camera_Timeout')
-                    sys.exit("Exit error: Camera Timeout.")
-                except Exception as e:
-                    logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
-                    scan_end = time.time()
-                    plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', e)
-                    sys.exit("Exit error: Unknown Camera Exception.")
-
-
-                # upload files
-                for tspath in args.workdir.glob("*"):
-                    if tspath.suffix == ".jpg":
-                        frames = frames + 1
-
-                    timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
-
-                    #add move position to file name
-                    path=append_path(path, f'_position{move_pos}')
-                    os.rename(tspath, path)
-
-                    logging.debug(path)
-                    logging.debug(timestamp)
-
-
-                    meta={'position': str(move_pos),
-                          'loop_num':str(loops)}
-                    
-                    plugin.upload_file(path, meta=meta, timestamp=timestamp)
-
-            scan_end = time.time()
-            plugin.publish('scan.duration.sec', scan_end-scan_start)
-
-            logging.info(f"Processed {frames} frames")
+                time.sleep(3)
+                success, duration = capture_image(mobot_im, args.frames)
+                if success:
+                    plugin.publish('capture.duration.sec', duration)
+                    path, timestamp = process_image_for_presets(
+                        next(args.workdir.glob("*")), mobot_im, move_pos)
+                    if path:
+                        upload_image(plugin, path, loops, move_pos, timestamp)
+            
+            plugin.publish('scan.duration.sec', time.time() - scan_start)
             if loop_check(loops, args.loops):
-                logging.info(f"Sleeping for {args.loopsleep} seconds between loops")
                 time.sleep(args.loopsleep)
 
-        
         plugin.publish('exit.status', 'Loop_Complete')
 
+
+def main(args):
+    # Check for the mode argument to decide which function to call
+    if args.mode == "dense":
+        # Set the parameters for dense_scan from args
+        direction = args.direction  # Assuming direction is an argument
+        speed = args.speed          # Assuming speed is an argument
+        duration = args.duration    # Assuming duration is an argument
+        num_images = args.num_images if hasattr(args, 'num_images') else 20  # Assuming num_images is an optional argument with default 20
+
+        # Call the dense_scan function
+        dense_scan(args, direction, speed, duration, num_images)
+
+    elif args.mode == "preset":
+        # Call the scan_presets function
+        scan_presets(args)
+
+    else:
+        print("Invalid mode provided. Please use --mode dense or --mode preset.")
+        sys.exit(-1)
 
 
 def default_preset():
@@ -214,6 +283,36 @@ if __name__ == "__main__":
         default=os.getenv("LOOP_SLEEP", 300),
         help="Seconds to sleep in-between loops",
     )
+
+    parser.add_argument(
+    "--mode",
+    choices=['dense', 'preset'],
+    required=True,
+    help="Mode of operation: 'dense' for dense scanning, 'preset' for preset scanning."
+    )
+
+    parser.add_argument(
+    "--direction",
+    type=str,
+    default="left",  # or whatever your default direction is
+    help="Direction for dense scan mode."
+    )
+
+    parser.add_argument(
+    "--speed",
+    type=int,
+    default=3,  # or whatever your default speed is
+    help="Speed for dense scan mode."
+    )
+
+    parser.add_argument(
+    "--duration",
+    type=int,
+    default=0.5,  # or whatever your default duration is
+    help="Duration for dense scan mode."
+    )
+
+
 
     args = parser.parse_args()
 
