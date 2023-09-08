@@ -47,7 +47,7 @@ def parse_preset_arg(arg):
         raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
 
-def main(args):
+def scan_presets(args):
     '''
     Runs Mobotix sampler to capture frames from the camera, 
     and uploads them to beehive. It loops through a list of preset position, moving the 
@@ -136,6 +136,13 @@ def main(args):
         plugin.publish('exit.status', 'Loop_Complete')
 
 
+def main(args):
+    if args.mode == "preset":
+        scan_presets(args)
+    else:
+        logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
+        sys.exit(-1)
+
 
 def default_preset():
     '''Creating comma separated string of ints for default movement.'''
@@ -157,6 +164,12 @@ if __name__ == "__main__":
         default=os.getenv("CAMERA_IP", ""),
         help="Camera IP or URL",
     )
+    parser.add_argument(
+    "--mode",
+        choices=['dense', 'preset'],
+        default= 'preset',
+        help="Mode of operation: 'dense' for dense scanning, 'preset' for preset scanning."
+        )
     parser.add_argument(
         "-pt",
         "--preset",
