@@ -95,7 +95,7 @@ class MobotixPT:
             }
         }
 
-    @timeout_decorator.timeout(DEFAULT_MOVEMENT_TIMEOUT)
+
     def _send_command(self, code):
         cmd = ["curl",
                "-u",
@@ -105,13 +105,16 @@ class MobotixPT:
                f"http://{self.ip}/control/rcontrol?action=putrs232&rs232outtext={code}"]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, timeout=DEFAULT_MOVEMENT_TIMEOUT, text=True)
             
             if result.stdout.strip() != 'OK':
                 raise Exception(f"INVALID_CREDENTIALS_OR_CONNECTION_ERROR:{result.stdout}")
             else:
                 return result.stdout
 
+        except subprocess.TimeoutExpired as e:
+            print("Error: {}".format(e))
+            return e
         except subprocess.CalledProcessError as e:
             print("Error: {}".format(e))
             return e
