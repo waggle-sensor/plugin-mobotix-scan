@@ -223,11 +223,16 @@ class MobotixImager():
             str(self.workdir),
         ]
         logging.info(f"Calling camera interface: {cmd}")
+
+        start_time = time.time()
         with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
             while True:
                 pollresults = select([process.stdout], [], [], 5)[0]
-                if not pollresults:
+
+                if not pollresults and  time.time() - start_time > DEFAULT_CAMERA_TIMEOUT:
                     logging.warning("Timeout waiting for camera interface output")
+                    raise Exception("Camera timeout.")
+
                     continue
                 output = pollresults[0].readline()
                 if not output:
