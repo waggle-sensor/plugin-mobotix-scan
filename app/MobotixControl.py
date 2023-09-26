@@ -11,7 +11,7 @@ from select import select
 from waggle.plugin import Plugin
 
 # camera image fetch timeout (seconds)
-DEFAULT_CAMERA_TIMEOUT = 30
+DEFAULT_CAMERA_TIMEOUT = 15
 
 # camera move timeout (seconds)
 DEFAULT_MOVEMENT_TIMEOUT = 15
@@ -229,11 +229,12 @@ class MobotixImager():
             while True:
                 pollresults = select([process.stdout], [], [], 5)[0]
 
-                if not pollresults and  time.time() - start_time > DEFAULT_CAMERA_TIMEOUT:
-                    logging.warning("Timeout waiting for camera interface output")
+                if time.time() - start_time > DEFAULT_CAMERA_TIMEOUT:
                     raise Exception("Camera timeout.")
-
+                elif not pollresults:
+                    logging.warning("Timeout waiting for camera interface output")
                     continue
+
                 output = pollresults[0].readline()
                 if not output:
                     logging.warning("No data from camera interface output")

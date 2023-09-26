@@ -90,18 +90,12 @@ def scan_presets(args):
                     mobot_im.capture()
                     capture_end = time.time()
                     plugin.publish('capture.duration.sec', capture_end-capture_start)
-                except timeout_decorator.timeout_decorator.TimeoutError:
-                    logging.warning(f"Timed out attempting to capture {args.frames} frames.")
-                    scan_end = time.time()
-                    plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', 'Camera_Timeout')
-                    sys.exit("Exit error: Camera Timeout.")
                 except Exception as e:
                     logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
                     scan_end = time.time()
                     plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', e)
-                    sys.exit("Exit error: Unknown Camera Exception.")
+                    plugin.publish('exit.status', str(e))
+                    sys.exit()
 
 
                 # upload files
