@@ -212,7 +212,47 @@ class MobotixImager():
         return fname_jpg
     
 
-    def csv_to_netcdf(file_path):
+    
+    def read_metadata_and_data(self, file_path):
+        with file_path.open('r') as f:
+            lines = f.readlines()
+
+        metadata = {}
+        for line in lines[:7]:  # Assuming metadata is the first 7 lines
+            key, value = line.strip().split(';')
+            metadata[key] = value
+
+        temperature_data = [list(map(float, line.split(';'))) for line in lines[8:]]
+        return metadata, np.array(temperature_data)
+
+    def convert_to_dataset(self, metadata, temperature_data, time):
+        height, width = int(metadata['height']), int(metadata['width'])
+        ds = xr.Dataset(
+            {'temperature': (['time', 'y', 'x'], temperature_data[np.newaxis, :, :])},
+            coords={
+                'time': [time],
+                'y': np.arange(height),
+                'x': np.arange(width)
+            }
+        )
+        for key, value in metadata.items():
+            ds.attrs[key] = value
+        return ds
+
+    def save_to_netcdf(self, ds, file_path):
+        output_filename = file_path.with_suffix(".nc")
+        ds.to_netcdf(output_filename)
+        return output_filename
+
+    def plot_data(self, ds, file_path):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ds.temperature.squeeze().plot(ax=ax, cmap='plasma', yincrease=False)
+        plot_filename = file_path.with_name(f"plot_{file_path.stem}.jpg")
+        fig.savefig(plot_filename)
+        return plot_filename
+
+    def csv_to_netcdf(self, file_path):
+        # Initial checks and data extraction
         if not isinstance(file_path, Path):
             raise TypeError(f"{file_path.name} is not a pathlib object")
         if 'celsius' not in file_path.name:
@@ -220,81 +260,20 @@ class MobotixImager():
             return
 
         try:
-            with file_path.open('r') as f:
-                lines = f.readlines()
-        except IOError as e:
-            print(f"Error reading file {file_path}: {e}")
-            return
-
-        # Extracting metadata
-        metadata = {}
-        try:
-            for line in lines[:7]:  # Assuming metadata is the first 7 lines
-                key, value = line.strip().split(';')
-                metadata[key] = value
-        except ValueError:
-            print(f"Error parsing metadata in {file_path}")
-            return
-
-        try:
-            if metadata['unit'] != 'degrees Celsius':
-                raise ValueError("The unit in the CSV file is not in degrees Celsius!")
-        except KeyError:
-            print(f"'unit' key missing in metadata for {file_path}")
-            return
-
-        # Parsing the temperature data
-        try:
-            temperature_data = [list(map(float, line.split(';'))) for line in lines[8:]]
-            temperature_data = np.array(temperature_data)
-        except ValueError as e:
-            print(f"Error parsing temperature data in {file_path}: {e}")
-            return
-
-        # Ensure the data shape matches with metadata width and height
-        try:
-            height, width = int(metadata['height']), int(metadata['width'])
-            if temperature_data.shape != (height, width):
-                raise ValueError(f"Data shape in {file_path} doesn't match the metadata.")
-        except KeyError:
-            print(f"Metadata 'height' or 'width' missing in {file_path}")
-            return
-        except ValueError as e:
-            print(e)
-            return
-
-        # Creating xarray dataset
-        ds = xr.Dataset(
-            {
-                'temperature': (['y', 'x'], temperature_data)
-            },
-            coords={
-                'y': np.arange(height),
-                'x': np.arange(width)
-            }
-        )
-
-        # Saving to netCDF
-        try:
-            output_filename = file_path.with_suffix(".nc")
-            ds.to_netcdf(output_filename)
-            print(f"File saved as {output_filename}")
-        except Exception as e:
-            print(f"Error saving to netCDF: {e}")
-
-        # Plotting the temperature data
-        try:
-            fig, ax = plt.subplots(figsize=(8, 5))
-            ds.temperature.plot(ax=ax, cmap='plasma', yincrease=False)
-            plot_filename = file_path.with_name(f"plot_{file_path.stem}.jpg")
-            fig.savefig(plot_filename)
+            metadata, temperature_data = self.read_metadata_and_data(file_path)
+            time, _ = self.extract_timestamp_and_filename(file_path.name)
+            ds = self.convert_to_dataset(metadata, temperature_data, time)
+            nc_filename = self.save_to_netcdf(ds, file_path)
+            plot_filename = self.plot_data(ds, file_path)
+            print(f"File saved as {nc_filename}")
             print(f"Plot saved as {plot_filename}")
         except Exception as e:
-            print(f"Error creating or saving the plot: {e}")
+            print(e)
 
-        return 
+        return
 
 
+    
 
     #@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
     def get_camera_frames(self):
@@ -350,7 +329,7 @@ class MobotixImager():
             if tspath.suffix == ".rgb":
                 tspath = self.convert_rgb_to_jpg(tspath)
             elif 'celsius' in tspath.name:
-                csv_to_netcdf(tspath)
+                self.csv_to_netcdf(tspath)
 
         return tspath
 
