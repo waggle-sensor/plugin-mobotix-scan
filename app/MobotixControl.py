@@ -8,10 +8,16 @@ import subprocess
 from pathlib import Path
 from select import select
 
+# for netcdf and plot
+import numpy as np
+import pandas as pd
+import xarray as xr
+import matplotlib.pyplot as plt
+
 from waggle.plugin import Plugin
 
 # camera image fetch timeout (seconds)
-DEFAULT_CAMERA_TIMEOUT = 15
+DEFAULT_CAMERA_TIMEOUT = 30
 
 # camera move timeout (seconds)
 DEFAULT_MOVEMENT_TIMEOUT = 15
@@ -103,7 +109,7 @@ class MobotixPT:
                "-X",
                "POST",
                f"http://{self.ip}/control/rcontrol?action=putrs232&rs232outtext={code}"]
-
+        
         try:
             result = subprocess.run(cmd, capture_output=True, timeout=DEFAULT_MOVEMENT_TIMEOUT, text=True)
             
@@ -204,6 +210,91 @@ class MobotixImager():
         logging.debug("Removing %s", fname_rgb)
         fname_rgb.unlink()
         return fname_jpg
+    
+
+    def csv_to_netcdf(file_path):
+        if not isinstance(file_path, Path):
+            raise TypeError(f"{file_path.name} is not a pathlib object")
+        if 'celsius' not in file_path.name:
+            logging.warning(f"{file_path.name} is not 'celsius' file.")
+            return
+
+        try:
+            with file_path.open('r') as f:
+                lines = f.readlines()
+        except IOError as e:
+            print(f"Error reading file {file_path}: {e}")
+            return
+
+        # Extracting metadata
+        metadata = {}
+        try:
+            for line in lines[:7]:  # Assuming metadata is the first 7 lines
+                key, value = line.strip().split(';')
+                metadata[key] = value
+        except ValueError:
+            print(f"Error parsing metadata in {file_path}")
+            return
+
+        try:
+            if metadata['unit'] != 'degrees Celsius':
+                raise ValueError("The unit in the CSV file is not in degrees Celsius!")
+        except KeyError:
+            print(f"'unit' key missing in metadata for {file_path}")
+            return
+
+        # Parsing the temperature data
+        try:
+            temperature_data = [list(map(float, line.split(';'))) for line in lines[8:]]
+            temperature_data = np.array(temperature_data)
+        except ValueError as e:
+            print(f"Error parsing temperature data in {file_path}: {e}")
+            return
+
+        # Ensure the data shape matches with metadata width and height
+        try:
+            height, width = int(metadata['height']), int(metadata['width'])
+            if temperature_data.shape != (height, width):
+                raise ValueError(f"Data shape in {file_path} doesn't match the metadata.")
+        except KeyError:
+            print(f"Metadata 'height' or 'width' missing in {file_path}")
+            return
+        except ValueError as e:
+            print(e)
+            return
+
+        # Creating xarray dataset
+        ds = xr.Dataset(
+            {
+                'temperature': (['y', 'x'], temperature_data)
+            },
+            coords={
+                'y': np.arange(height),
+                'x': np.arange(width)
+            }
+        )
+
+        # Saving to netCDF
+        try:
+            output_filename = file_path.with_suffix(".nc")
+            ds.to_netcdf(output_filename)
+            print(f"File saved as {output_filename}")
+        except Exception as e:
+            print(f"Error saving to netCDF: {e}")
+
+        # Plotting the temperature data
+        try:
+            fig, ax = plt.subplots(figsize=(8, 5))
+            ds.temperature.plot(ax=ax, cmap='plasma', yincrease=False)
+            plot_filename = file_path.with_name(f"plot_{file_path.stem}.jpg")
+            fig.savefig(plot_filename)
+            print(f"Plot saved as {plot_filename}")
+        except Exception as e:
+            print(f"Error creating or saving the plot: {e}")
+
+        return 
+
+
 
     #@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
     def get_camera_frames(self):
@@ -258,10 +349,11 @@ class MobotixImager():
         for tspath in self.workdir.glob("*"):
             if tspath.suffix == ".rgb":
                 tspath = self.convert_rgb_to_jpg(tspath)
+            elif 'celsius' in tspath.name:
+                csv_to_netcdf(tspath)
 
         return tspath
 
 
-                
 
 

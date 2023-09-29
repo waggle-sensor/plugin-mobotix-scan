@@ -18,7 +18,6 @@ import time
 from pathlib import Path
 from select import select
 
-import timeout_decorator
 from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
@@ -28,7 +27,6 @@ def loop_check(i, m):
     A function to determine if the loop should continue based on the value of m 
     (maximum number of iterations) and i (current iteration).'''
     return m < 0 or i < m
-
 
 def append_path(filename, string):
     '''
@@ -67,11 +65,15 @@ def scan_presets(args):
             scan_start = time.time()
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
-            presets = parse_preset_arg(args.preset) # gert a list from string
+            presets = parse_preset_arg(args.preset) # get a list from string
 
             for move_pos in presets:
+
+                meta={'position': str(move_pos),
+                    'loop_num':str(loops)}
+
                 if presets[0]!=0:
-                    # Move the caemra if scan is requested
+                    # Move the camera if scan is requested
                     status = mobot_pt.move_to_preset(move_pos)
 
                     plugin.publish('mobotix.move.status', status)
@@ -79,7 +81,7 @@ def scan_presets(args):
                     if status.strip() != str('OK'):
                         scan_end = time.time()
                         plugin.publish('scan.duration.sec', scan_end-scan_start)
-                        plugin.publish('exit.status', 'Scan_Error')
+                        plugin.publish('exit.status', 'Scan_Error', meta=meta)
                         sys.exit(-1)
 
                     time.sleep(3) #For Safety
@@ -94,7 +96,7 @@ def scan_presets(args):
                     logging.warning(f"Unknown exception {e} during capture of {args.frames} frames.")
                     scan_end = time.time()
                     plugin.publish('scan.duration.sec', scan_end-scan_start)
-                    plugin.publish('exit.status', str(e))
+                    plugin.publish('exit.status', str(e), meta=meta)
                     sys.exit()
 
 
@@ -112,9 +114,6 @@ def scan_presets(args):
                     logging.debug(path)
                     logging.debug(timestamp)
 
-
-                    meta={'position': str(move_pos),
-                          'loop_num':str(loops)}
                     
                     plugin.upload_file(path, meta=meta, timestamp=timestamp)
 
