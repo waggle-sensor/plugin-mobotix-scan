@@ -247,22 +247,16 @@ class MobotixImager():
     def plot_data(self, ds, file_path):
         fig, ax = plt.subplots(figsize=(8, 5))
         ds.temperature.squeeze().plot(ax=ax, cmap='plasma', yincrease=False)
-        plot_filename = file_path.with_name(f"plot_{file_path.stem}.jpg")
+        plot_filename = file_path.with_name(f"{file_path.stem}_plot.jpg")
         fig.savefig(plot_filename)
         return plot_filename
 
     def csv_to_netcdf(self, file_path):
-        # Initial checks and data extraction
-        if not isinstance(file_path, Path):
-            raise TypeError(f"{file_path.name} is not a pathlib object")
-        if 'celsius' not in file_path.name:
-            logging.warning(f"{file_path.name} is not 'celsius' file.")
-            return
 
         try:
             metadata, temperature_data = self.read_metadata_and_data(file_path)
-            time, _ = self.extract_timestamp_and_filename(file_path.name)
-            ds = self.convert_to_dataset(metadata, temperature_data, time)
+            time, _ = self.extract_timestamp_and_filename(file_path)
+            ds = self.convert_to_dataset(metadata, temperature_data, time/1000000000)
             nc_filename = self.save_to_netcdf(ds, file_path)
             plot_filename = self.plot_data(ds, file_path)
             print(f"File saved as {nc_filename}")
