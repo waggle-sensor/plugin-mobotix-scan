@@ -1,2 +1,6 @@
 timeout-decorator
 pywaggle[vision]>=0.52.0
+numpy
+scipy
+matplotlib
+xarray
