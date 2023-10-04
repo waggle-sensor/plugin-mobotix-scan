@@ -1,6 +1,7 @@
 import subprocess
 import time
-import timeout_decorator
+import datetime
+
 
 import logging
 import re
@@ -8,9 +9,10 @@ import subprocess
 from pathlib import Path
 from select import select
 
+
 # for netcdf and plot
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import xarray as xr
 import matplotlib.pyplot as plt
 
@@ -235,6 +237,11 @@ class MobotixImager():
                 'x': np.arange(width)
             }
         )
+
+        time_cal = datetime.datetime.fromtimestamp(time).strftime('%d %b %Y %H:%M:%S UTC')
+        ds['time'].attrs['strftime']=time_cal
+        ds['time'].attrs['units']= 'seconds since 1970-01-01 00:00:00 UTC'
+
         for key, value in metadata.items():
             ds.attrs[key] = value
         return ds
