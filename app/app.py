@@ -23,7 +23,7 @@ from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
 
-DEFAULT_SCAN_TIMEOUT =600
+DEFAULT_SCAN_TIMEOUT =900
 
 def loop_check(i, m):
     '''
@@ -119,7 +119,6 @@ def scan_presets(args):
 
                     
                     plugin.upload_file(path, meta=meta, timestamp=timestamp)
-                    plugin.publish('file.name.test', tspath.name)
 
             scan_end = time.time()
             plugin.publish('scan.duration.sec', scan_end-scan_start)
@@ -134,11 +133,17 @@ def scan_presets(args):
 
 
 def main(args):
-    if args.mode == "preset":
-        scan_presets(args)
-    else:
-        logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
-        sys.exit(-1)
+    with Plugin() as plugin:
+        if args.mode == "preset":
+            try:
+                scan_presets(args)
+            except timeout_decorator.TimeoutError:
+                logging.error(f"Unknown_Timeout")
+                plugin.publish('exit.status', 'Unknown_Timeout')
+                sys.exit("Exit error: Unknown_Timeout")
+        else:
+            logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
+            sys.exit(-1)
 
 
 def default_preset():
@@ -213,8 +218,8 @@ if __name__ == "__main__":
         "--loops",
         dest="loops",
         type=int,
-        default=os.getenv("LOOPS", -1),
-        help="Number of loops to perform. Defaults to 'infinite' (-1)",
+        default=os.getenv("LOOPS", 1),
+        help="Number of loops to perform. Defaults to oneshot mode (l=1).",
     )
     parser.add_argument(
         "-s",
