@@ -22,7 +22,7 @@ from waggle.plugin import Plugin
 DEFAULT_CAMERA_TIMEOUT = 30
 
 # camera move timeout (seconds)
-DEFAULT_MOVEMENT_TIMEOUT = 15
+DEFAULT_MOVEMENT_TIMEOUT = 30
 
 class MobotixPT:
     ''' A class representing Mobotix Pan-Tilt camera control.
@@ -116,15 +116,16 @@ class MobotixPT:
             result = subprocess.run(cmd, capture_output=True, timeout=DEFAULT_MOVEMENT_TIMEOUT, text=True)
             
             if result.stdout.strip() != 'OK':
+                logging.warning('PT unit did not respond with OK')
                 raise Exception(f"INVALID_CREDENTIALS_OR_CONNECTION_ERROR:{result.stdout}")
             else:
                 return result.stdout
 
         except subprocess.TimeoutExpired as e:
-            print("Error: {}".format(e))
+            logging.error("Error: {}".format(e))
             return e
         except subprocess.CalledProcessError as e:
-            print("Error: {}".format(e))
+            logging.error("Error: {}".format(e))
             return e
 
     def move_to_preset(self, pt_id):
@@ -193,23 +194,28 @@ class MobotixImager():
     def convert_rgb_to_jpg(self, fname_rgb: Path):
         fname_jpg = fname_rgb.with_suffix(".jpg")
         image_dims = self.extract_resolution(fname_rgb)
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-f",
-                "rawvideo",
-                "-pixel_format",
-                "bgra",
-                "-video_size",
-                image_dims,
-                "-i",
-                str(fname_rgb),
-                str(fname_jpg),
-            ],
-            check=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-f",
+                    "rawvideo",
+                    "-pixel_format",
+                    "bgra",
+                    "-video_size",
+                    image_dims,
+                    "-i",
+                    str(fname_rgb),
+                    str(fname_jpg),
+                ],
+                check=True,
+                timeout=60
+            )
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Error converting RGB to JPG: {e}")
+            raise
 
-        logging.debug("Removing %s", fname_rgb)
+        logging.info("Removing %s", fname_rgb)
         fname_rgb.unlink()
         return fname_jpg
     
@@ -266,17 +272,18 @@ class MobotixImager():
             ds = self.convert_to_dataset(metadata, temperature_data, time/1000000000)
             nc_filename = self.save_to_netcdf(ds, file_path)
             plot_filename = self.plot_data(ds, file_path)
-            print(f"File saved as {nc_filename}")
-            print(f"Plot saved as {plot_filename}")
+            logging.info(f"File saved as {nc_filename}")
+            logging.info(f"Plot saved as {plot_filename}")
         except Exception as e:
-            print(e)
+            logging.error(f"Error in converting CSV to NetCDF: {e}")
+            raise
 
         return
 
 
     
 
-    #@timeout_decorator.timeout(DEFAULT_CAMERA_TIMEOUT, use_signals=False)
+
     def get_camera_frames(self):
         '''Calls the camera interface to capture frames and 
         stores them in the working directory.
@@ -296,25 +303,32 @@ class MobotixImager():
         logging.info(f"Calling camera interface: {cmd}")
 
         start_time = time.time()
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
-            while True:
-                pollresults = select([process.stdout], [], [], 5)[0]
+        
+        try:
+            with subprocess.Popen(cmd, stdout=subprocess.PIPE) as process:
+                while True:
+                    pollresults = select([process.stdout], [], [], 5)[0]
 
-                if time.time() - start_time > DEFAULT_CAMERA_TIMEOUT:
-                    raise Exception("Camera timeout.")
-                elif not pollresults:
-                    logging.warning("Timeout waiting for camera interface output")
-                    continue
+                    if time.time() - start_time > DEFAULT_CAMERA_TIMEOUT:
+                        logging.exception("Camera timeout.")
+                        raise Exception("Camera timeout.")
+                    elif not pollresults:
+                        logging.info("Timeout waiting for camera interface output")
+                        continue
 
-                output = pollresults[0].readline()
-                if not output:
-                    logging.warning("No data from camera interface output")
-                    continue
-                m = re.search("frame\s#(\d+)", output.strip().decode())
-                logging.info(output.strip().decode())
-                if m and int(m.groups()[0]) > self.frames:
-                    logging.info("Max frame count reached, closing camera capture")
-                    return
+                    output = pollresults[0].readline()
+                    if not output:
+                        logging.warning("No data from camera interface output")
+                        continue
+                    m = re.search("frame\s#(\d+)", output.strip().decode())
+                    logging.info(output.strip().decode())
+                    if m and int(m.groups()[0]) > self.frames:
+                        logging.info("Max frame count reached, closing camera capture")
+                        return
+                    
+        except Exception as e:
+            logging.exception("Camera plugin encountered an error: %s", str(e))
+            raise
 
     def capture(self):
         '''Captures frames from the camera, converts them to JPG, 

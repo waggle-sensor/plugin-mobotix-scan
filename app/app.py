@@ -17,10 +17,13 @@ import sys
 import time
 from pathlib import Path
 from select import select
+import timeout_decorator
 
 from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
+
+DEFAULT_SCAN_TIMEOUT =600
 
 def loop_check(i, m):
     '''
@@ -44,7 +47,7 @@ def parse_preset_arg(arg):
     except ValueError:
         raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
 
-
+@timeout_decorator.timeout(DEFAULT_SCAN_TIMEOUT, use_signals=True)
 def scan_presets(args):
     '''
     Runs Mobotix sampler to capture frames from the camera, 
@@ -116,6 +119,7 @@ def scan_presets(args):
 
                     
                     plugin.upload_file(path, meta=meta, timestamp=timestamp)
+                    plugin.publish('file.name.test', tspath.name)
 
             scan_end = time.time()
             plugin.publish('scan.duration.sec', scan_end-scan_start)
