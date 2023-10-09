@@ -14,7 +14,9 @@ import argparse
 import logging
 import os
 import sys
+import shutil
 import time
+import datetime
 from pathlib import Path
 from select import select
 import timeout_decorator
@@ -23,6 +25,7 @@ from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
 
+ARCHIVE_DIR = "/archive"
 DEFAULT_SCAN_TIMEOUT =900
 
 def loop_check(i, m):
@@ -132,6 +135,58 @@ def scan_presets(args):
         plugin.publish('exit.status', 'Loop_Complete')
 
 
+
+
+### Functions for custom scan
+
+def process_and_upload_files(plugin, mobot_im, args, seq_name, meta):
+    for tspath in args.workdir.glob("*"):
+        print('>>>>>> this file tspath -> '+str(tspath))
+        timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
+        time_cal = datetime.datetime.fromtimestamp(timestamp/1_000_000_000).strftime('%Y-%m-%d_%H%M%S')
+        print('>>>>>> this file extracted path -> '+str(path))
+        new_name = append_path(path,time_cal+seq_name)
+        print('>>>>>> this file new name  -> '+str(new_name))
+        os.rename(tspath, Path(new_name))
+        print('>>>>>> this file renamed ')
+        print(str(new_name))
+        shutil.copy(new_name, os.path.join(ARCHIVE_DIR, os.path.basename(new_name)))
+        plugin.upload_file(new_name, timestamp=timestamp)
+
+def generate_imgseq_name(start_pos, image_num, move_direction, move_speed, move_duration):
+    duration_ms = int(1000*move_duration)
+
+    move_string = f"_Pt{start_pos}-{move_direction}-S{move_speed}xD{duration_ms}ms_Img{str(image_num)}"
+    return move_string
+
+
+def scan_custom(args, num_images, move_pos=None, move_direction="right", move_speed=5, move_duration=0.5):
+    mobot_pt = MobotixPT(user='admin', passwd='wagglesage', ip='10.31.81.16')
+    mobot_im = MobotixImager(user='admin', passwd='wagglesage', ip='10.31.81.16', workdir=args.workdir, frames=1)
+
+    print(">>>>inside the capture function!")
+    if move_pos is not None and move_pos != 0:
+        status = mobot_pt.move_to_preset(move_pos)
+        time.sleep(3)  # For Safety
+
+    with Plugin() as plugin:
+        for i in range(0, num_images):
+            try:
+                mobot_im.capture()
+            except Exception as e:
+                logging.warning(f"Exception {e} during capture.")
+                sys.exit(f"Exit error: {str(e)}")
+            print('>>>>>>>capturing image ' + str(i))
+            mobot_pt.move(direction=move_direction, speed=move_speed, duration=move_duration)
+
+            seq_name = generate_imgseq_name(move_pos, i, move_direction, move_speed, move_duration)
+            process_and_upload_files(plugin, mobot_im, args, seq_name, meta={})
+            print(">>>>Complete "+ str(i) + " loop")
+
+    return None
+
+
+
 def main(args):
     with Plugin() as plugin:
         if args.mode == "preset":
@@ -142,7 +197,10 @@ def main(args):
                 plugin.publish('exit.status', 'Unknown_Timeout')
                 sys.exit("Exit error: Unknown_Timeout")
         elif args.mode == "custom":
-            capture_images(args,num_images=15, move_pos=3, move_direction="right", move_speed=3, move_duration=0.5)
+            if not os.path.exists(ARCHIVE_DIR):
+                os.mkdir(ARCHIVE_DIR)
+                
+            scan_custom(args,num_images=15, move_pos=3, move_direction="right", move_speed=3, move_duration=0.5)
         else:
             logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
             sys.exit(-1)
