@@ -165,11 +165,12 @@ def scan_custom(args):
     with Plugin() as plugin:
         for img in range(0, args.num_shots):
             try:
-                mobot_im.capture()
+                if not mobot_im.capture():
+                    Plugin.publish('exit.status', 'Empty capture')
+                    sys.exit()
             except Exception as e:
                 logging.warning(f"Exception {e} during capture.")
                 sys.exit(f"Exit error: {str(e)}")
-            print('>>>>>>>capturing image ' + str(img))
             mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
 
             seq_name = generate_imgseq_name(presets[0], img, args.move_direction, args.move_speed, args.move_duration)
