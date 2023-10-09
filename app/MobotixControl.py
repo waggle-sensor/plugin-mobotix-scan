@@ -322,7 +322,7 @@ class MobotixImager():
                         continue
                     m = re.search("frame\s#(\d+)", output.strip().decode())
                     logging.info(output.strip().decode())
-                    if m and int(m.groups()[0]) > self.frames:
+                    if m and int(m.groups()[0]) >= self.frames:
                         logging.info("Max frame count reached, closing camera capture")
                         return
                     
