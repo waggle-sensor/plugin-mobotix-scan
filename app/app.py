@@ -160,28 +160,29 @@ def generate_imgseq_name(start_pos, image_num, move_direction, move_speed, move_
     return move_string
 
 
-def scan_custom(args, num_images, move_pos=None, move_direction="right", move_speed=5, move_duration=0.5):
-    mobot_pt = MobotixPT(user='admin', passwd='wagglesage', ip='10.31.81.16')
-    mobot_im = MobotixImager(user='admin', passwd='wagglesage', ip='10.31.81.16', workdir=args.workdir, frames=1)
+def scan_custom(args):
+    mobot_pt = MobotixPT(user=args.user, passwd=args.password, ip=args.ip)
+    mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
 
     print(">>>>inside the capture function!")
-    if move_pos is not None and move_pos != 0:
-        status = mobot_pt.move_to_preset(move_pos)
+    presets = parse_preset_arg(args.preset) # get a list from string
+    if presets is not None and presets[0] != 0:
+        status = mobot_pt.move_to_preset(presets[0])
         time.sleep(3)  # For Safety
 
     with Plugin() as plugin:
-        for i in range(0, num_images):
+        for img in range(0, args.num_shots):
             try:
                 mobot_im.capture()
             except Exception as e:
                 logging.warning(f"Exception {e} during capture.")
                 sys.exit(f"Exit error: {str(e)}")
-            print('>>>>>>>capturing image ' + str(i))
-            mobot_pt.move(direction=move_direction, speed=move_speed, duration=move_duration)
+            print('>>>>>>>capturing image ' + str(img))
+            mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
 
-            seq_name = generate_imgseq_name(move_pos, i, move_direction, move_speed, move_duration)
+            seq_name = generate_imgseq_name(presets[0], img, args.move_direction, args.move_speed, args.move_duration)
             process_and_upload_files(plugin, mobot_im, args, seq_name, meta={})
-            print(">>>>Complete "+ str(i) + " loop")
+            print(">>>>Complete "+ str(img) + " loop")
 
     return None
 
@@ -200,7 +201,7 @@ def main(args):
             if not os.path.exists(ARCHIVE_DIR):
                 os.mkdir(ARCHIVE_DIR)
 
-            scan_custom(args,num_images=15, move_pos=5, move_direction="right", move_speed=3, move_duration=0.5)
+            scan_custom(args)
         else:
             logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
             sys.exit(-1)
@@ -238,7 +239,9 @@ if __name__ == "__main__":
         dest="preset",
         type=str,
         default= default_preset(),
-        help="preset locations for scanning, as a comma-separated string. (0 for non-scaning mode.)"
+        help="""preset locations for preset scanning, as a comma-separated string. 
+        Also, used as starting position for custom scan.
+        (0-for non-scaning mode.)"""
     )
     
     parser.add_argument(
@@ -289,6 +292,40 @@ if __name__ == "__main__":
         default=os.getenv("LOOP_SLEEP", 300),
         help="Seconds to sleep in-between loops",
     )
+
+    parser.add_argument(
+        "--ptshots",
+        dest="num_shots",
+        type=int,
+        default=15,
+        help="Number of images for custom scan",
+    )
+
+    parser.add_argument(
+        "--ptdir",
+        dest="move_direction",
+        type=str,
+        choices=["left", "right", "up", "down"],
+        default="right",
+        help="Direction to move: 'left' or 'right' are preffered.",
+    )
+
+    parser.add_argument(
+        "--ptspeed",
+        dest="move_speed",
+        type=int,
+        default=3,
+        help="Speed to move",
+    )
+
+    parser.add_argument(
+        "--ptdur",
+        dest="move_duration",
+        type=float,
+        default=0.5,
+        help="Duration to move",
+    )
+
 
     args = parser.parse_args()
 
