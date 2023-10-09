@@ -199,8 +199,8 @@ def main(args):
         elif args.mode == "custom":
             if not os.path.exists(ARCHIVE_DIR):
                 os.mkdir(ARCHIVE_DIR)
-                
-            scan_custom(args,num_images=15, move_pos=3, move_direction="right", move_speed=3, move_duration=0.5)
+
+            scan_custom(args,num_images=15, move_pos=5, move_direction="right", move_speed=3, move_duration=0.5)
         else:
             logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
             sys.exit(-1)
