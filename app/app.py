@@ -22,8 +22,6 @@ import timeout_decorator
 from waggle.plugin import Plugin
 from MobotixScan import scan_custom, scan_presets
 
-ARCHIVE_DIR = "/archive"
-DEFAULT_SCAN_TIMEOUT =900
 
 
 def main(args):
@@ -36,9 +34,6 @@ def main(args):
                 plugin.publish('exit.status', 'Unknown_Timeout')
                 sys.exit("Exit error: Unknown_Timeout")
         elif args.mode == "custom":
-            if not os.path.exists(ARCHIVE_DIR):
-                os.mkdir(ARCHIVE_DIR)
-
             scan_custom(args)
         else:
             logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")

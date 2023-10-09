@@ -14,6 +14,8 @@ from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
 
+DEFAULT_SCAN_TIMEOUT =900
+ARCHIVE_DIR = "/archive"
 
 def loop_check(i, m):
     '''
@@ -127,6 +129,9 @@ def scan_presets(args):
 ### Functions for custom scan
 
 def process_and_upload_files(plugin, mobot_im, args, seq_name):
+    if not os.path.exists(ARCHIVE_DIR):
+        os.mkdir(ARCHIVE_DIR)
+
     for tspath in args.workdir.glob("*"):
         print('>>>>>> this file tspath -> '+str(tspath))
         timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
