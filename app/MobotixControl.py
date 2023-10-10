@@ -1,5 +1,6 @@
 import subprocess
 import time
+import os
 import datetime
 
 
@@ -22,7 +23,9 @@ from waggle.plugin import Plugin
 DEFAULT_CAMERA_TIMEOUT = 30
 
 # camera move timeout (seconds)
-DEFAULT_MOVEMENT_TIMEOUT = 30
+DEFAULT_MOVEMENT_TIMEOUT = 15
+
+DEFAULT_MOVEMENT_WAIT = 1 # for safety
 
 class MobotixPT:
     ''' A class representing Mobotix Pan-Tilt camera control.
@@ -145,6 +148,7 @@ class MobotixPT:
             self._send_command(code)
             time.sleep(duration)
             self.stop()
+            #time.sleep(DEFAULT_MOVEMENT_WAIT) # for safety
         else:
             return "Invalid code value for movement."
         
@@ -281,9 +285,6 @@ class MobotixImager():
         return
 
 
-    
-
-
     def get_camera_frames(self):
         '''Calls the camera interface to capture frames and 
         stores them in the working directory.
@@ -322,7 +323,13 @@ class MobotixImager():
                         continue
                     m = re.search("frame\s#(\d+)", output.strip().decode())
                     logging.info(output.strip().decode())
-                    if m and int(m.groups()[0]) >= self.frames:
+                    if m and int(m.groups()[0]) > self.frames:
+                        # Check if the  workdir is empty or not (May not be needed, now)
+                        #dir_ls = os.listdir(self.workdir) 
+                        #if len(dir_ls) == 0:
+                        #    logging.warning("Empty directory. Waiting capture...")
+                        #    continue
+
                         logging.info("Max frame count reached, closing camera capture")
                         return
                     
@@ -346,7 +353,7 @@ class MobotixImager():
             elif 'celsius' in tspath.name:
                 self.csv_to_netcdf(tspath)
 
-        return tspath
+            return None
 
 
 
