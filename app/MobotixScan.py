@@ -133,15 +133,10 @@ def process_and_upload_files(plugin, mobot_im, args, seq_name):
         os.mkdir(ARCHIVE_DIR)
 
     for tspath in args.workdir.glob("*"):
-        print('>>>>>> this file tspath -> '+str(tspath))
         timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
-        time_cal = datetime.datetime.fromtimestamp(timestamp/1_000_000_000).strftime('%Y-%m-%d_%H%M%S')
-        print('>>>>>> this file extracted path -> '+str(path))
+        time_cal = datetime.datetime.fromtimestamp(timestamp/1_000_000_000).strftime('_%Y-%m-%dT%H%M%S')
         new_name = append_path(path,time_cal+seq_name)
-        print('>>>>>> this file new name  -> '+str(new_name))
         os.rename(tspath, Path(new_name))
-        print('>>>>>> this file renamed ')
-        print(str(new_name))
         shutil.copy(new_name, os.path.join(ARCHIVE_DIR, os.path.basename(new_name)))
         plugin.upload_file(new_name, timestamp=timestamp)
 
@@ -151,7 +146,7 @@ def generate_imgseq_name(start_pos, image_num, move_direction, move_speed, move_
     move_string = f"_Pt{start_pos}-{move_direction}-S{move_speed}xD{duration_ms}ms_Img{str(image_num)}"
     return move_string
 
-
+@timeout_decorator.timeout(DEFAULT_SCAN_TIMEOUT, use_signals=True)
 def scan_custom(args):
     mobot_pt = MobotixPT(user=args.user, passwd=args.password, ip=args.ip)
     mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
@@ -176,4 +171,14 @@ def scan_custom(args):
             print(">>>>Complete "+ str(img) + " loop")
 
     return None
+
+
+
+### Functions for Panorama
+@timeout_decorator.timeout(DEFAULT_SCAN_TIMEOUT, use_signals=True)
+def scan_custom_panorama(args):
+    #First scan custom
+    scan_custom(args)
+
+
 

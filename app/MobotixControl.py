@@ -238,6 +238,7 @@ class MobotixImager():
         return metadata, np.array(temperature_data)
 
     def convert_to_dataset(self, metadata, temperature_data, time):
+        logging.info('creating xarray dataset...')
         height, width = int(metadata['height']), int(metadata['width'])
         ds = xr.Dataset(
             {'temperature': (['time', 'y', 'x'], temperature_data[np.newaxis, :, :])},
@@ -259,9 +260,11 @@ class MobotixImager():
     def save_to_netcdf(self, ds, file_path):
         output_filename = file_path.with_suffix(".nc")
         ds.to_netcdf(output_filename)
+        logging.info('saving netcdf . . .')
         return output_filename
 
     def plot_data(self, ds, file_path):
+        logging.info('ploting data ...')
         fig, ax = plt.subplots(figsize=(8, 5))
         ds.temperature.squeeze().plot(ax=ax, cmap='turbo', yincrease=False)
         plot_filename = file_path.with_name(f"{file_path.stem}_plot.jpg")
@@ -269,7 +272,7 @@ class MobotixImager():
         return plot_filename
 
     def csv_to_netcdf(self, file_path):
-
+        logging.info('creating netcdf from CSV .. . .')
         try:
             metadata, temperature_data = self.read_metadata_and_data(file_path)
             time, _ = self.extract_timestamp_and_filename(file_path)
@@ -281,7 +284,7 @@ class MobotixImager():
         except Exception as e:
             logging.error(f"Error in converting CSV to NetCDF: {e}")
             raise
-
+        logging.info('Done, if file names are printed above.')
         return
 
 
@@ -324,11 +327,11 @@ class MobotixImager():
                     m = re.search("frame\s#(\d+)", output.strip().decode())
                     logging.info(output.strip().decode())
                     if m and int(m.groups()[0]) > self.frames:
-                        # Check if the  workdir is empty or not (May not be needed, now)
-                        #dir_ls = os.listdir(self.workdir) 
-                        #if len(dir_ls) == 0:
-                        #    logging.warning("Empty directory. Waiting capture...")
-                        #    continue
+                        #Check if the  workdir is empty.
+                        dir_ls = os.listdir(self.workdir) 
+                        if len(dir_ls) == 0:
+                            logging.warning("Empty directory. No Frames captured.")
+                            continue
 
                         logging.info("Max frame count reached, closing camera capture")
                         return
@@ -350,10 +353,10 @@ class MobotixImager():
         for tspath in self.workdir.glob("*"):
             if tspath.suffix == ".rgb":
                 tspath = self.convert_rgb_to_jpg(tspath)
-            elif 'celsius' in tspath.name:
+            elif 'celsius' in tspath.name and tspath.suffix == ".csv":
                 self.csv_to_netcdf(tspath)
 
-            return None
+            return 
 
 
 
