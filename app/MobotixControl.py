@@ -36,6 +36,7 @@ class MobotixPT:
         ip (str): Camera IP or URL.
     '''
     def __init__(self, user, passwd, ip):
+        logging.info("Initializing MobotixPT with IP: %s", ip)
         self.user = user
         self.passwd = passwd
         self.ip = ip
@@ -115,6 +116,8 @@ class MobotixPT:
                "POST",
                f"http://{self.ip}/control/rcontrol?action=putrs232&rs232outtext={code}"]
         
+        logging.info("Sending command : %s", cmd)
+
         try:
             result = subprocess.run(cmd, capture_output=True, timeout=DEFAULT_MOVEMENT_TIMEOUT, text=True)
             
@@ -134,6 +137,9 @@ class MobotixPT:
     def move_to_preset(self, pt_id):
         '''Moves the camera to the specified preset location.'''
         preset_code = self.presets.get(pt_id)
+
+        logging.info("Moving to preset with ID: %d", pt_id)
+
         if preset_code:
             return self._send_command(preset_code)
         else:
@@ -178,6 +184,7 @@ class MobotixImager():
         frames (int): Number of frames to capture in each attempt.
 '''
     def __init__(self, ip, user, passwd, workdir, frames):
+        logging.info("Initializing MobotixImager with IP: %s and workdir: %s", ip, workdir)
         super().__init__()
         self.ip = ip
         self.user = user
@@ -187,6 +194,7 @@ class MobotixImager():
 
     def extract_timestamp_and_filename(self, path: Path):
         '''Extracts timestamp and filename from mobotix file path.'''
+        logging.info(f"Extracting timestamp and filename from {path}")
         timestamp_str, filename = path.name.split("_", 1)
         timestamp = int(timestamp_str)
         return timestamp, path.with_name(filename)
@@ -198,6 +206,7 @@ class MobotixImager():
     def convert_rgb_to_jpg(self, fname_rgb: Path):
         fname_jpg = fname_rgb.with_suffix(".jpg")
         image_dims = self.extract_resolution(fname_rgb)
+        logging.info(f"Converting {fname_rgb} from RGB to JPG")
         try:
             subprocess.run(
                 [
@@ -226,6 +235,7 @@ class MobotixImager():
 
     
     def read_metadata_and_data(self, file_path):
+        logging.info(f"Reading metadata and data from {file_path}")
         with file_path.open('r') as f:
             lines = f.readlines()
 
