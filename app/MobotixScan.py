@@ -156,7 +156,7 @@ def scan_custom(args):
     mobot_pt = MobotixPT(user=args.user, passwd=args.password, ip=args.ip)
     mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
 
-    print(">>>>inside the capture function!")
+    print(">>>>inside the custom function!")
     presets = parse_preset_arg(args.preset) # get a list from string
     if presets is not None and presets[0] != 0:
         status = mobot_pt.move_to_preset(presets[0])
@@ -165,9 +165,7 @@ def scan_custom(args):
     with Plugin() as plugin:
         for img in range(0, args.num_shots):
             try:
-                if not mobot_im.capture():
-                    Plugin.publish('exit.status', 'Empty capture')
-                    sys.exit()
+                mobot_im.capture()
             except Exception as e:
                 logging.warning(f"Exception {e} during capture.")
                 sys.exit(f"Exit error: {str(e)}")
