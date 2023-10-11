@@ -32,9 +32,14 @@ def main(args):
             except timeout_decorator.TimeoutError:
                 logging.error(f"Unknown_Timeout")
                 plugin.publish('exit.status', 'Unknown_Timeout')
-                sys.exit("Exit error: Unknown_Timeout")
+                sys.exit("Exit error while scanning presets: Unknown_Timeout")
         elif args.mode == "custom":
-            scan_custom(args)
+            try:
+                scan_custom(args)
+            except timeout_decorator.TimeoutError:
+                logging.error(f"Unknown_Timeout")
+                plugin.publish('exit.status', 'Unknown_Timeout')
+                sys.exit("Exit error while scanning custom: Unknown_Timeout")
         else:
             logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
             sys.exit(-1)
@@ -62,7 +67,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
     "--mode",
-        choices=['custom', 'preset'],
+        choices=['preset', 'custom', 'pano'],
         default= 'preset',
         help="Mode of operation: 'custom' scanning, 'preset' scanning."
         )

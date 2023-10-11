@@ -10,6 +10,8 @@ from pathlib import Path
 from select import select
 import timeout_decorator
 
+import xarray as xr
+
 from waggle.plugin import Plugin
 
 from MobotixControl import MobotixPT, MobotixImager
@@ -175,6 +177,24 @@ def scan_custom(args):
 
 
 ### Functions for Panorama
+
+def merge_netcdfs(archive_dir, out_filename):
+    """
+    Merges multiple NetCDF files in a directory into a single file.
+    
+    Args:
+    - directory (str): The directory containing the NetCDF files.
+    - output_filename (str): The name of the merged NetCDF file.
+    """
+
+    # List all .nc files in the directory
+    files = [os.path.join(archive_dir, f) for f in os.listdir(archive_dir) if f.endswith('.nc')]
+
+    # Open all datasets and concatenate along a new dimension (let's call it 'shot')
+    with xr.open_mfdataset(files) as ds:
+        ds.to_netcdf(out_filename)
+
+
 @timeout_decorator.timeout(DEFAULT_SCAN_TIMEOUT, use_signals=True)
 def scan_custom_panorama(args):
     #First scan custom
