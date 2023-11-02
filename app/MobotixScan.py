@@ -158,8 +158,10 @@ def scan_custom(args):
     presets = parse_string_arg(args.preset) # get a list from string
     num_shots = parse_string_arg(args.num_shots)
     move_speed = parse_string_arg(args.move_speed)
-    move_duration = parse_string_arg(args.move_duration)/1000 #expect nanosecond and convert to seconds
+    move_duration = parse_string_arg(args.move_duration) #expect nanosecond and convert to seconds
+    move_duration = [i/1000 for i in move_duration]
     move_direction = args.move_direction # only one direction
+
 
     if presets is not None and presets[0] != 0:
         for loop in range(len(presets)):
