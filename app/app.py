@@ -145,14 +145,13 @@ if __name__ == "__main__":
         type=str,
         choices=["left", "right", "up", "down"],
         default="right",
-        help="Direction to move: 'left' or 'right' are preffered. Repeat for each preset.",
+        help="Direction to move: 'left' or 'right' are preffered. Do not repeat for each preset.",
     )
 
     parser.add_argument(
         "--ptspeed",
         dest="move_speed",
         type=int,
-        choices=[1, 2, 3, 4, 5],
         default=3,
         help="Speed to move. Repeat for each preset.",
     )
