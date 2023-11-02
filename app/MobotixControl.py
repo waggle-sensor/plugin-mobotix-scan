@@ -365,7 +365,7 @@ class MobotixImager():
                 tspath = self.convert_rgb_to_jpg(tspath)
             elif 'celsius' in tspath.name and tspath.suffix == ".csv":
                 self.csv_to_netcdf(tspath)
-                
+
 
         return 
 

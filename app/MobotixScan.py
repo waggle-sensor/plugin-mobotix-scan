@@ -152,25 +152,31 @@ def generate_imgseq_name(start_pos, image_num, move_direction, move_speed, move_
 def scan_custom(args):
     mobot_pt = MobotixPT(user=args.user, passwd=args.password, ip=args.ip)
     mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
-
-    print(">>>>inside the custom function!")
+    
+    logging.info('entered the custom function')
     presets = parse_preset_arg(args.preset) # get a list from string
     if presets is not None and presets[0] != 0:
-        status = mobot_pt.move_to_preset(presets[0])
-        time.sleep(3)  # For Safety
+        for pt in presets:
+            scan_start = time.time()
+            status = mobot_pt.move_to_preset(pt)
+            time.sleep(3)  # For Safety
 
-    with Plugin() as plugin:
-        for img in range(0, args.num_shots):
-            try:
-                mobot_im.capture()
-            except Exception as e:
-                logging.warning(f"Exception {e} during capture.")
-                sys.exit(f"Exit error: {str(e)}")
-            mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
+            with Plugin() as plugin:
+                for img in range(0, args.num_shots):
+                    try:
+                        mobot_im.capture()
+                    except Exception as e:
+                        logging.warning(f"Exception {e} during capture.")
+                        sys.exit(f"Exit error: {str(e)}")
+                    mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
 
-            seq_name = generate_imgseq_name(presets[0], img, args.move_direction, args.move_speed, args.move_duration)
-            process_and_upload_files(plugin, mobot_im, args, seq_name)
-            print(">>>>Complete "+ str(img) + " loop")
+                    seq_name = generate_imgseq_name(presets[0], img, args.move_direction, args.move_speed, args.move_duration)
+                    process_and_upload_files(plugin, mobot_im, args, seq_name)
+                    logging.info(">>>>Complete "+ str(img) + " loop")
+
+                scan_end = time.time()
+                plugin.publish('scan.duration.sec', scan_end-scan_start)
+                plugin.publish('exit.status', 'Loop_Complete')
 
     return None
 

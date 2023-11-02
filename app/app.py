@@ -77,6 +77,7 @@ if __name__ == "__main__":
         dest="preset",
         type=str,
         default= default_preset(),
+        choices= default_preset(),
         help="""preset locations for preset scanning, as a comma-separated string. 
         Also, used as starting position for custom scan.
         (0-for non-scaning mode.)"""
@@ -152,6 +153,7 @@ if __name__ == "__main__":
         "--ptspeed",
         dest="move_speed",
         type=int,
+        choices=[1, 2, 3, 4, 5],
         default=3,
         help="Speed to move",
     )
