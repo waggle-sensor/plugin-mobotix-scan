@@ -159,6 +159,7 @@ def scan_custom(args):
         for pt in presets:
             scan_start = time.time()
             status = mobot_pt.move_to_preset(pt)
+            logging.info(f'Moving to Preset {pt}')
             time.sleep(3)  # For Safety
 
             with Plugin() as plugin:
@@ -170,9 +171,9 @@ def scan_custom(args):
                         sys.exit(f"Exit error: {str(e)}")
                     mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
 
-                    seq_name = generate_imgseq_name(presets[0], img, args.move_direction, args.move_speed, args.move_duration)
+                    seq_name = generate_imgseq_name(pt, img, args.move_direction, args.move_speed, args.move_duration)
                     process_and_upload_files(plugin, mobot_im, args, seq_name)
-                    logging.info(">>>>Complete "+ str(img) + " loop")
+                    logging.info(">>>>Complete "+ str(img) + " in loop for preset " +str(pt))
 
                 scan_end = time.time()
                 plugin.publish('scan.duration.sec', scan_end-scan_start)
