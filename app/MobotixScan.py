@@ -179,9 +179,9 @@ def scan_custom(args):
                     except Exception as e:
                         logging.warning(f"Exception {e} during capture.")
                         sys.exit(f"Exit error: {str(e)}")
-                    mobot_pt.move(direction=move_direction[loop], speed=move_speed[loop], duration=move_duration[loop])
+                    mobot_pt.move(direction=move_direction, speed=move_speed[loop], duration=move_duration[loop])
 
-                    seq_name = generate_imgseq_name(presets[loop], img, move_direction[loop], move_speed[loop], move_duration[loop])
+                    seq_name = generate_imgseq_name(presets[loop], img, move_direction, move_speed[loop], move_duration[loop])
 
                     process_and_upload_files(plugin, mobot_im, args, seq_name)
                     logging.info(">>>>Complete "+ str(img) + " in loop for preset " +str(pt))
