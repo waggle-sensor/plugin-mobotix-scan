@@ -134,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ptshots",
         dest="num_shots",
-        type=int,
+        type=str,
         default=15,
         help="Number of images for custom scan. Repeat for each preset.",
     )
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ptspeed",
         dest="move_speed",
-        type=int,
+        type=str,
         default=3,
         help="Speed to move. Repeat for each preset.",
     )
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ptdur",
         dest="move_duration",
-        type=float,
+        type=str,
         default=500,
         help="Duration to move in nano-seconds. Repeat for each preset.",
     )
