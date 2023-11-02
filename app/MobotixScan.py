@@ -184,7 +184,7 @@ def scan_custom(args):
                     seq_name = generate_imgseq_name(presets[loop], img, move_direction, move_speed[loop], move_duration[loop])
 
                     process_and_upload_files(plugin, mobot_im, args, seq_name)
-                    logging.info(">>>>Complete "+ str(img) + " in loop for preset " +str(pt))
+                    logging.info(">>>>Complete "+ str(img) + " in loop for preset " +str(presets[loop]))
 
                 scan_end = time.time()
                 plugin.publish('scan.duration.sec', scan_end-scan_start)
