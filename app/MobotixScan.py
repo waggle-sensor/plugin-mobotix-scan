@@ -154,12 +154,12 @@ def scan_custom(args):
     mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
     
     logging.info('entered the custom function')
-    
+
     presets = parse_string_arg(args.preset) # get a list from string
     num_shots = parse_string_arg(args.num_shots)
-    move_direction = parse_string_arg(args.move_direction)
     move_speed = parse_string_arg(args.move_speed)
-    move_duration = parse_string_arg(args.move_duration)
+    move_duration = parse_string_arg(args.move_duration)/1000 #expect nanosecond and convert to seconds
+    move_direction = args.move_direction # only one direction
 
     if presets is not None and presets[0] != 0:
         for loop in range(len(presets)):
