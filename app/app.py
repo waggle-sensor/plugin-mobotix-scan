@@ -136,7 +136,7 @@ if __name__ == "__main__":
         dest="num_shots",
         type=int,
         default=15,
-        help="Number of images for custom scan",
+        help="Number of images for custom scan. Repeat for each preset.",
     )
 
     parser.add_argument(
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         type=str,
         choices=["left", "right", "up", "down"],
         default="right",
-        help="Direction to move: 'left' or 'right' are preffered.",
+        help="Direction to move: 'left' or 'right' are preffered. Repeat for each preset.",
     )
 
     parser.add_argument(
@@ -154,15 +154,15 @@ if __name__ == "__main__":
         type=int,
         choices=[1, 2, 3, 4, 5],
         default=3,
-        help="Speed to move",
+        help="Speed to move. Repeat for each preset.",
     )
 
     parser.add_argument(
         "--ptdur",
         dest="move_duration",
         type=float,
-        default=0.5,
-        help="Duration to move",
+        default=500,
+        help="Duration to move in nano-seconds. Repeat for each preset.",
     )
 
 

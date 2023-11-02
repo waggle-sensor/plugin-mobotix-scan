@@ -33,13 +33,13 @@ def append_path(filename, string):
     filepath = Path(filename)
     return filepath.parent / (filepath.stem + string + filepath.suffix)
 
-def parse_preset_arg(arg):
+def parse_string_arg(arg):
     '''This is to handle the parsing of the string of integers.'''
     try:
         pt = [int(p) for p in arg.split(',')]
         return pt
     except ValueError:
-        raise argparse.ArgumentTypeError("Invalid preset format. Please provide comma-separated integers.")
+        raise argparse.ArgumentTypeError("Invalid string argument format. Please provide comma-separated integers only.")
 
 @timeout_decorator.timeout(DEFAULT_SCAN_TIMEOUT, use_signals=True)
 def scan_presets(args):
@@ -62,7 +62,7 @@ def scan_presets(args):
             scan_start = time.time()
             logging.info(f"Loop {loops} of " + ("infinite" if args.loops < 0 else str(args.loops)))
             frames = 0
-            presets = parse_preset_arg(args.preset) # get a list from string
+            presets = parse_string_arg(args.preset) # get a list from string
 
             for move_pos in presets:
 
@@ -154,24 +154,33 @@ def scan_custom(args):
     mobot_im = MobotixImager(user=args.user, passwd=args.password, ip=args.ip, workdir=args.workdir, frames=args.frames)
     
     logging.info('entered the custom function')
-    presets = parse_preset_arg(args.preset) # get a list from string
+    
+    presets = parse_string_arg(args.preset) # get a list from string
+    num_shots = parse_string_arg(args.num_shots)
+    move_direction = parse_string_arg(args.move_direction)
+    move_speed = parse_string_arg(args.move_speed)
+    move_duration = parse_string_arg(args.move_duration)
+
     if presets is not None and presets[0] != 0:
-        for pt in presets:
+        for loop in range(len(presets)):
             scan_start = time.time()
-            status = mobot_pt.move_to_preset(pt)
-            logging.info(f'Moving to Preset {pt}')
+            status = mobot_pt.move_to_preset(presets[loop])
+            logging.info(f'Moving to Preset {presets[loop]}')
             time.sleep(3)  # For Safety
 
+
+
             with Plugin() as plugin:
-                for img in range(0, args.num_shots):
+                for img in range(0, num_shots[loop]):
                     try:
                         mobot_im.capture()
                     except Exception as e:
                         logging.warning(f"Exception {e} during capture.")
                         sys.exit(f"Exit error: {str(e)}")
-                    mobot_pt.move(direction=args.move_direction, speed=args.move_speed, duration=args.move_duration)
+                    mobot_pt.move(direction=move_direction[loop], speed=move_speed[loop], duration=move_duration[loop])
 
-                    seq_name = generate_imgseq_name(pt, img, args.move_direction, args.move_speed, args.move_duration)
+                    seq_name = generate_imgseq_name(presets[loop], img, move_direction[loop], move_speed[loop], move_duration[loop])
+
                     process_and_upload_files(plugin, mobot_im, args, seq_name)
                     logging.info(">>>>Complete "+ str(img) + " in loop for preset " +str(pt))
 
