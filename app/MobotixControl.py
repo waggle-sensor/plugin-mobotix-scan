@@ -276,7 +276,7 @@ class MobotixImager():
     def plot_data(self, ds, file_path):
         logging.info('ploting data ...')
         fig, ax = plt.subplots(figsize=(8, 5))
-        ds.temperature.squeeze().plot(ax=ax, cmap='turbo', yincrease=False)
+        ds.temperature.squeeze().plot(ax=ax, cmap='turbo', yincrease=False, center=False, robust=True)
         plot_filename = file_path.with_name(f"{file_path.stem}_plot.jpg")
         fig.savefig(plot_filename)
         return plot_filename
