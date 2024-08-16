@@ -38,7 +38,8 @@ def calculate_pt(sdir, pdir):
 
     for direction in pdir.upper().split(','):
         try:
-            value = (s_compensation + int(dir_lut[direction])) % 33
+            value = (s_compensation + int(dir_lut[direction])) % 32
+            if value == 0: value=32
             pt_values.append(value)
         except KeyError:
             raise KeyError(f"Invalid direction '{direction}' provided. Use {dir_lut.keys()}")

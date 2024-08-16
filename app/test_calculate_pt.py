@@ -5,7 +5,13 @@ class TestCalculatePt(unittest.TestCase):
     def test_case_1(self):
         sdir = 28
         pdir = "SES,NEG"
-        expected = '20, 15'
+        expected = '21, 16'
+        self.assertEqual(calculate_pt(sdir, pdir), expected)
+
+    def test_case_2(self):
+        sdir = 18
+        pdir = "wh,SEG,ES,neb,NG,NES,eg"
+        expected = '26, 16, 9, 7, 4, 29, 28'
         self.assertEqual(calculate_pt(sdir, pdir), expected)
 
     def test_invalid_direction(self):
