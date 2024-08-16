@@ -1,96 +1,52 @@
-# Mobotix Scanner
-This plugin moves Mobotix camera to specified preset locations and captures thermal and visible images and data from given positions. The plugin takes the IP or URL of the camera, the user ID, and the password as command-line arguments. It also takes the preset location IDs as an optional argument.
-The 32 preset locations are available for use by calling preset 1-32 or scan in default. For nonPT units, set the preset position to 0, so the scanning code will not be executed. For the constatnt view, set the preset position to single desired position.
+# Mobotix Scanner Plugin
+This plugin moves the Mobotix camera to specified preset locations and captures thermal and visible images from those positions. The plugin accepts the IP or URL of the camera, user ID, and password as command-line arguments. It also supports preset location IDs as an optional argument. There are 32 preset locations available, accessible by calling preset 1-32 or by scanning in the default mode. For non-PT (Pan/Tilt) units, set the preset position to 0 to disable the scanning code. For a constant view, set the preset position to a single desired location.
 
+## Scanning Modes
 
-## Usage
+### 1. **Preset Scanning Mode (`preset`)**
 
-To execute the plugin use the following (from within the built `Docker` container):
-
+In this mode, the camera moves to specified preset locations sequentially and captures images at each position. The preset locations are defined using the `-pt` or `--preset` argument as a comma-separated string.
+```bash
+python3 /app/app.py --ip 10.11.12.13 -u admin -p password --mode preset --pt 1,6,4,8
 ```
-python3 /app/app.py --ip ip_address -pt locations --user username --password password 
-```
+This command moves the camera to preset points 1, 6, 4, and 8 sequentially and captures images at each location.
+
+### 2. Custom Scanning Mode (`custom`)
+
+Custom scanning mode allows more detailed control over the camera’s movement and image capturing process. You can specify multiple custom scan loops, durations, speeds, and directions.
 
 
-
-```
-python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 5
-```
-This moves camera with ip 10.11.12.13 to preset point 5.
-
-
-```
-python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 1,6,4,8
-```
-This moves camera to preset point 1,6,4,8 and captures images.
-
-```
-python3 /app/app.py --ip 10.11.12.13 -u admin -p password --pt 0
-```
-This will capture images but without moving the camera.
-
-
-
-
-### Usage with `pluginctl` for custom scan
-To run one custom scan loop for one preset position
-```
+Single custom scan loop:
+```bash
 sudo pluginctl deploy -n test-custom 10.31.81.1:5000/local/plugin-mobotix-scan -- --ip 10.31.81.16 -p meinsm --mode custom --preset 1 --ptshots 5 --ptdur 500 --ptspeed 4
 ```
+This command performs a custom scan loop starting at preset 1, taking 5 shots, with a movement duration of 500 nanoseconds and a speed of 4.
 
-To run multiple custom scan loops for multiple preset position
+Multiple custom scan loops:
+
+```bash
+    sudo pluginctl deploy -n test-custom 10.31.81.1:5000/local/plugin-mobotix-scan -- --ip 10.31.81.16 -p meinsm --mode custom --preset 1,3,5 --ptshots 5,5,5 --ptdur 500,400,300 --ptspeed 4,5,5 --ptdir left
 ```
-sudo pluginctl deploy -n test-custom 10.31.81.1:5000/local/plugin-mobotix-scan -- --ip 10.31.81.16 -p meinsm --mode custom --preset 1,3, 5 --ptshots 5,5,5 --ptdur 500,400,300 --ptspeed 4,5,5 --ptdir left
+This command performs multiple custom scan loops starting at presets 1, 3, and 5, taking 5 shots at each location with varying durations, speeds, and directions.
+
+### 3. Direction-Based Scanning Mode (`direction`)
+
+In direction-based scanning mode, you start from a specified preset that points South and scan using directional movements. The initial south-pointing preset is provided via the `--southdirection` or `-south argument`, and subsequent directional movements are specified using the -pt or --preset argument.
+
+```bash
+python3 /app/app.py --ip 10.11.12.13 -u admin -p password --mode direction --south 28 --pt SES,NEG
 ```
+This command starts from preset 28 (which points south), calculates the necessary directional offset, and moves the camera based on the SES and NEG directional presets.
 
-### Arguments
+Arguments
 
-1. `--debug`: Enable debug logs. This argument doesn't require a value.
-   
-2. `--ip`: Specifies the camera IP or URL. You can also use the `CAMERA_IP` environment variable.
-   
-3. `--mode`: Sets the mode of operation. The available choices are:
-   - `preset`: Use preset scanning.
-   - `custom`: Use custom scanning.
-
-   The default mode is `preset`.
-
-4. `-pt` or `--preset`: For preset scanning, provide preset locations as a comma-separated string. This is also used as the starting position for custom scanning. By default, a range of numbers will be used. You can specify `0` for non-scanning mode.
-   
-5. `-u` or `--user`: Specifies the camera user ID. By default, it uses the `CAMERA_USER` environment variable or "admin".
-   
-6. `-p` or `--password`: Specifies the camera password. By default, it uses the `CAMERA_PASSWORD` environment variable or "meinsm".
-   
-7. `-w` or `--workdir`: Specifies the directory to cache camera data before uploading. The default directory is `./data`.
-   
-8. `-f` or `--frames`: Specifies the number of frames to capture per loop. By default, it uses the `FRAMES_PER_LOOP` environment variable or sets to 1.
-   
-9. `-l` or `--loops`: Specifies the number of loops to perform. The default is a one-shot mode, which means `l=1`.
-   
-10. `-s` or `--loopsleep`: Specifies the seconds to sleep between loops. By default, it uses the `LOOP_SLEEP` environment variable or sets to 300 seconds.
-    
-11. `--ptshots`: Specifies the number of images for a `custom scan`. This will repeat for each preset. The default is 15.
-
-12. `--ptdir`: Specifies the direction to move. The choices are:
-    - `left`
-    - `right`
-    - `up`
-    - `down`
-    
-    The preferred choices are 'left' or 'right'. Same for each preset in custom scan, and the default direction is `right`.
-
-13. `--ptspeed`: Specifies the speed to move. This will repeat for each preset. The default speed is 3.
-
-14. `--ptdur`: Specifies the duration to move in nano-seconds. This will repeat for each preset. The default duration is 500 nano-seconds.
-
-
-
-
-### Development
-
-The `Docker` container can be built by executing the following:
-
-```
-./build.sh
-```
-
+    --debug: Enable debug logs.
+    --ip: Specifies the camera IP or URL. The CAMERA_IP environment variable can also be used.
+    --mode: Sets the mode of operation. Choices are preset, custom, and direction.
+    -pt or --preset: Provide preset locations as a comma-separated string. This is used for preset and direction scanning modes, and as the starting position for custom scanning.
+    -u or --user: Specifies the camera user ID. Defaults to admin.
+    -p or --password: Specifies the camera password. Defaults to meinsm.
+    -south or --southdirection: Specifies the camera preset value that points the camera toward the south. This is used in the direction mode.
+    --ptdir: Specifies the direction to move (left, right, up, down). Default is right.
+    --ptspeed: Specifies the speed to move. Default is 3.
+    --ptdur: Specifies the duration to move in nanoseconds. Default is 500 nanoseconds.
