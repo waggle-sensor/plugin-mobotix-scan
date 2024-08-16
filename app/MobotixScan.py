@@ -33,6 +33,8 @@ def calculate_pt(sdir, pdir):
     }
     
     # Calculate s_compensation
+#    s_compensation = (int((x-1)/4))*4 # calculate the plane.
+
     s_compensation = (int((int(sdir) - 1) / 4)) * 4
     
     # Calculate the final value for each direction in pdir
@@ -40,7 +42,7 @@ def calculate_pt(sdir, pdir):
 
     for direction in pdir.upper().split(','):
         try:
-            value = (s_compensation + int(dir_lut[direction])) % 32
+            value = (s_compensation + int(dir_lut[direction])) % 33
             pt_values.append(value)
         except KeyError:
             raise KeyError(f"Invalid direction '{direction}' provided. Use {dir_lut.keys()}")

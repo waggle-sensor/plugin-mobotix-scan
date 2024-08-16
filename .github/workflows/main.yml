@@ -3,7 +3,7 @@ name: Waggle CI
 on:
   push:
     branches:
-      - '*'
+      - 'main'
 
 jobs:
   build:
