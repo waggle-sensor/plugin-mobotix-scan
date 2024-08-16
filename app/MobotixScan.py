@@ -31,13 +31,9 @@ def calculate_pt(sdir, pdir):
         'ES': '25', 'EH': '26', 'EB': '27', 'EG': '28',
         'SES': '29', 'SEH': '30', 'SEB': '31', 'SEG': '32'
     }
-    
-    # Calculate s_compensation
-#    s_compensation = (int((x-1)/4))*4 # calculate the plane.
 
     s_compensation = (int((int(sdir) - 1) / 4)) * 4
-    
-    # Calculate the final value for each direction in pdir
+
     pt_values = []
 
     for direction in pdir.upper().split(','):
