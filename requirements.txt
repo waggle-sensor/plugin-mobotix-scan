@@ -4,4 +4,3 @@ scipy
 matplotlib
 xarray
 timeout_decorator
-unittest
