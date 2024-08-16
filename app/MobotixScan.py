@@ -19,6 +19,36 @@ from MobotixControl import MobotixPT, MobotixImager
 DEFAULT_SCAN_TIMEOUT =900
 ARCHIVE_DIR = "/archive"
 
+
+def calculate_pt(sdir, pdir):
+    dir_lut = {
+        'SS': '1', 'SH': '2', 'SBH': '3', 'SG': '4',
+        'SWS': '5', 'SWH': '6', 'SWB': '7', 'SWG': '8',
+        'WS': '9', 'WH': '10', 'WB': '11', 'WG': '12',
+        'NWS': '13', 'NWH': '14', 'NWB': '15', 'NWG': '16',
+        'NS': '17', 'NH': '18', 'NB': '19', 'NG': '20',
+        'NES': '21', 'NEH': '22', 'NEB': '23', 'NEG': '24',
+        'ES': '25', 'EH': '26', 'EB': '27', 'EG': '28',
+        'SES': '29', 'SEH': '30', 'SEB': '31', 'SEG': '32'
+    }
+    
+    # Calculate s_compensation
+    s_compensation = (int((int(sdir) - 1) / 4)) * 4
+    
+    # Calculate the final value for each direction in pdir
+    pt_values = []
+
+    for direction in pdir.upper().split(','):
+        try:
+            value = (s_compensation + int(dir_lut[direction])) % 32
+            pt_values.append(value)
+        except KeyError:
+            raise KeyError(f"Invalid direction '{direction}' provided. Use {dir_lut.keys()}")
+    pt_list = ', '.join(map(str, pt_values))
+    logging.info(pt_list)
+    return pt_list
+
+
 def loop_check(i, m):
     '''
     A function to determine if the loop should continue based on the value of m 

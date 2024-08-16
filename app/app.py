@@ -20,7 +20,7 @@ from select import select
 import timeout_decorator
 
 from waggle.plugin import Plugin
-from MobotixScan import scan_custom, scan_presets
+from MobotixScan import scan_custom, scan_presets, calculate_pt
 
 
 
@@ -40,8 +40,17 @@ def main(args):
                 logging.error(f"Unknown_Timeout")
                 plugin.publish('exit.status', 'Unknown_Timeout')
                 sys.exit("Exit error while scanning custom: Unknown_Timeout")
+        elif args.mode == 'direction':
+            try:
+                args.preset=calculate_pt(args.south, args.preset)
+                logging.info(args.preset)
+                scan_presets(args)
+            except timeout_decorator.TimeoutError:
+                logging.error(f"Unknown_Timeout")
+                plugin.publish('exit.status', 'Unknown_Timeout')
+                sys.exit("Exit error while scanning direction: Unknown_Timeout")
         else:
-            logging.error("Invalid scan mode. Select `--mode dense` or `--mode preset`.")
+            logging.error("Invalid scan mode. Select `--mode custom` or `--mode preset`.")
             sys.exit(-1)
 
 
@@ -67,9 +76,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
     "--mode",
-        choices=['preset', 'custom', 'pano'],
+        choices=['preset', 'custom', 'direction'],
         default= 'preset',
-        help="Mode of operation: 'custom' scanning, 'preset' scanning."
+        help="Mode of operation: 'custom' scanning, 'preset' scanning, 'direction' scanning."
         )
     parser.add_argument(
         "-pt",
@@ -77,11 +86,12 @@ if __name__ == "__main__":
         dest="preset",
         type=str,
         default= default_preset(),
-        help="""preset locations for preset scanning, as a comma-separated string. 
-        Also, used as starting position for custom scan.
-        (0-for non-scaning mode.)"""
+        help="""preset locations for preset or direction scanning mode, as a comma-separated string. 
+        Also, used as starting position for custom scan. F
+        or `direction` mode it is direction locations for scanning, as a comma-separated string.
+        Values are of the form XS, XH, XB, and XG, where X = N,S,E,W,NE,SW,SE,NW.
+        (0-for non-scanning mode.)"""
     )
-    
     parser.add_argument(
         "-u",
         "--user",
@@ -164,6 +174,14 @@ if __name__ == "__main__":
         help="Duration to move in nano-seconds. Repeat for each preset.",
     )
 
+    parser.add_argument(
+        "-south",
+        "--southdirection",
+        dest="south",
+        type=str,
+        default= '1', # consider a default of 1, i.e. Plane Zero is pointed south.
+        help="""A Camera preset value that points the camera toward the south."""
+    )
 
     args = parser.parse_args()
 
