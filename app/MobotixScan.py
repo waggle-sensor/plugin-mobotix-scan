@@ -96,9 +96,10 @@ def scan_presets(args):
             presets = parse_string_arg(args.preset) # get a list from string
 
             for move_pos in presets:
-
-                meta={'position': str(move_pos),
-                    'loop_num':str(loops)}
+                meta = {'position': str(move_pos), 'loop_num': str(loops)}
+                if args.mode == 'direction':
+                    direction = str(args.direction[str(move_pos)])
+                    meta['direction'] = direction
 
                 if presets[0]!=0:
                     # Move the camera if scan is requested
@@ -136,7 +137,7 @@ def scan_presets(args):
                     timestamp, path = mobot_im.extract_timestamp_and_filename(tspath)
 
                     #add move position to file name
-                    path=append_path(path, f'_position{move_pos}')
+                    path=append_path(path, f'_position{direction}')
                     os.rename(tspath, path)
 
                     logging.debug(path)
