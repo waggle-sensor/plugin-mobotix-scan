@@ -98,7 +98,7 @@ def scan_presets(args):
             for move_pos in presets:
                 meta = {'position': str(move_pos), 'loop_num': str(loops)}
                 if args.mode == 'direction':
-                    direction = str(args.direction[str(move_pos)])
+                    direction = str(args.directions[str(move_pos)])
                     meta['direction'] = direction
 
                 if presets[0]!=0:

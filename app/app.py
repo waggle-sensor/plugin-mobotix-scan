@@ -42,11 +42,11 @@ def main(args):
                 sys.exit("Exit error while scanning custom: Unknown_Timeout")
         elif args.mode == 'direction':
             try:
-                directions_clean = args.presets.replace(' ', '')
+                directions_clean = args.preset.replace(' ', '')
                 directions_list = directions_clean.split(',')
 
                 args.preset=calculate_pt(args.south, args.preset)
-                presets_list = args.presets.split(',')
+                presets_list = args.preset.split(',')
                 args.directions = dict(zip(presets_list, directions_list))
 
                 logging.info(args.preset)
