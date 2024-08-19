@@ -36,7 +36,9 @@ def calculate_pt(sdir, pdir):
 
     pt_values = []
 
-    for direction in pdir.upper().split(','):
+    pdir = pdir.upper().replace(" ", "")
+
+    for direction in pdir.split(','):
         try:
             value = (s_compensation + int(dir_lut[direction])) % 32
             if value == 0: value=32

@@ -16,7 +16,7 @@ class TestCalculatePt(unittest.TestCase):
 
     def test_case_3(self):
         sdir = 20
-        pdir = "SWS,EG,neh,NS,NWG,wb,eH,nEG"
+        pdir = "SWS, EG, neh, NS, NWG, wb,eH,nEG"
         expected = '21, 12, 6, 1, 32, 27, 10, 8'
         self.assertEqual(calculate_pt(sdir, pdir), expected)
 
