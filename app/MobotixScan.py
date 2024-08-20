@@ -22,7 +22,7 @@ ARCHIVE_DIR = "/archive"
 
 def calculate_pt(sdir, pdir):
     dir_lut = {
-        'SS': '1', 'SH': '2', 'SBH': '3', 'SG': '4',
+        'SS': '1', 'SH': '2', 'SB': '3', 'SG': '4',
         'SWS': '5', 'SWH': '6', 'SWB': '7', 'SWG': '8',
         'WS': '9', 'WH': '10', 'WB': '11', 'WG': '12',
         'NWS': '13', 'NWH': '14', 'NWB': '15', 'NWG': '16',

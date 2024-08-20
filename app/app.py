@@ -55,6 +55,9 @@ def main(args):
                 logging.error(f"Unknown_Timeout")
                 plugin.publish('exit.status', 'Unknown_Timeout')
                 sys.exit("Exit error while scanning direction: Unknown_Timeout")
+            except ValueError as e:
+                plugin.publish('exit.status', "Unknown_Direction.")
+                raise(e)
         else:
             logging.error("Invalid scan mode. Select `--mode custom` or `--mode preset`.")
             sys.exit(-1)
