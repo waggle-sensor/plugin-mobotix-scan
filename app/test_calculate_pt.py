@@ -19,6 +19,11 @@ class TestCalculatePt(unittest.TestCase):
         pdir = "SWS, EG, neh, NS, NWG, wb,eH,nEG"
         expected = '21, 12, 6, 1, 32, 27, 10, 8'
         self.assertEqual(calculate_pt(sdir, pdir), expected)
+    def test_case_4(self):
+        sdir = 22
+        pdir = "NEH,NEB,NEG,EH,EB,EG,SEH,SEB,SEG,SH,SB,SG,SWH,SWB,SWG"
+        expected = '10, 11, 12, 14, 15, 16, 18, 19, 20, 22, 23, 24, 26, 27, 28'
+        self.assertEqual(calculate_pt(sdir, pdir), expected)
 
     def test_invalid_direction(self):
         with self.assertRaises(ValueError) as context:

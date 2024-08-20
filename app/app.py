@@ -46,7 +46,7 @@ def main(args):
                 directions_list = directions_clean.split(',')
 
                 args.preset=calculate_pt(args.south, args.preset)
-                presets_list = args.preset.split(',')
+                presets_list = args.preset.replace(' ', '').split(',')
                 args.directions = dict(zip(presets_list, directions_list))
 
                 logging.info(args.preset)
