@@ -38,15 +38,96 @@ python3 /app/app.py --ip 10.11.12.13 -u admin -p password --mode direction --sou
 ```
 This command starts from preset 28 (which points south), calculates the necessary directional offset, and moves the camera based on the SES and NEG directional presets.
 
-Arguments
+## **Command-Line Arguments**
 
-    --debug: Enable debug logs.
-    --ip: Specifies the camera IP or URL. The CAMERA_IP environment variable can also be used.
-    --mode: Sets the mode of operation. Choices are preset, custom, and direction.
-    -pt or --preset: Provide preset locations as a comma-separated string. This is used for preset and direction scanning modes, and as the starting position for custom scanning.
-    -u or --user: Specifies the camera user ID. Defaults to admin.
-    -p or --password: Specifies the camera password. Defaults to meinsm.
-    -south or --southdirection: Specifies the camera preset value that points the camera toward the south. This is used in the direction mode.
-    --ptdir: Specifies the direction to move (left, right, up, down). Default is right.
-    --ptspeed: Specifies the speed to move. Default is 3.
-    --ptdur: Specifies the duration to move in nanoseconds. Default is 500 nanoseconds.
+### **--debug**
+- **Description**: Enables debug logs.
+- **Usage**: Optional.
+- **Example**: `--debug`
+
+### **--ip**
+- **Description**: Specifies the camera IP or URL.
+- **Usage**: Required.
+- **Example**: `--ip 10.11.12.13`
+- **Default**: Value from the `CAMERA_IP` environment variable.
+
+### **--mode**
+- **Description**: Sets the mode of operation.
+- **Choices**: `preset`, `custom`, `direction`
+- **Usage**: Optional.
+- **Example**: `--mode custom`
+- **Default**: `preset`
+
+### **-pt, --preset**
+- **Description**: Provides preset locations as a comma-separated string. Used for preset and direction scanning modes and as the starting position for custom scanning. For direction mode, it specifies direction locations for scanning.
+- **Usage**: Optional.
+- **Example**: `--preset 1,6,4,8`
+- **Default**: A generated string covering default movement positions.
+
+### **-u, --user**
+- **Description**: Specifies the camera user ID.
+- **Usage**: Optional.
+- **Example**: `--user admin`
+- **Default**: `admin` or value from the `CAMERA_USER` environment variable.
+
+### **-p, --password**
+- **Description**: Specifies the camera password.
+- **Usage**: Optional.
+- **Example**: `--password mypassword`
+- **Default**: `meinsm` or value from the `CAMERA_PASSWORD` environment variable.
+
+### **-w, --workdir**
+- **Description**: Directory to cache camera data before upload.
+- **Usage**: Optional.
+- **Example**: `--workdir /path/to/directory`
+- **Default**: `./data`
+
+### **-f, --frames**
+- **Description**: Number of frames to capture per loop.
+- **Usage**: Optional.
+- **Example**: `--frames 5`
+- **Default**: `1` or value from the `FRAMES_PER_LOOP` environment variable.
+
+### **-l, --loops**
+- **Description**: Number of loops to perform.
+- **Usage**: Optional.
+- **Example**: `--loops 10`
+- **Default**: `1` or value from the `LOOPS` environment variable.
+
+### **-s, --loopsleep**
+- **Description**: Seconds to sleep in between loops.
+- **Usage**: Optional.
+- **Example**: `--loopsleep 300`
+- **Default**: `300` or value from the `LOOP_SLEEP` environment variable.
+
+### **--ptshots**
+- **Description**: Number of images for custom scan. Repeat for each preset.
+- **Usage**: Optional.
+- **Example**: `--ptshots 10`
+- **Default**: `15`
+
+### **--ptdir**
+- **Description**: Direction to move the camera. Options include `left`, `right`, `up`, `down`.
+- **Usage**: Optional.
+- **Example**: `--ptdir left`
+- **Default**: `right`
+
+### **--ptspeed**
+- **Description**: Speed to move the camera.
+- **Usage**: Optional.
+- **Example**: `--ptspeed 5`
+- **Default**: `3`
+
+### **--ptdur**
+- **Description**: Duration to move the camera in nanoseconds.
+- **Usage**: Optional.
+- **Example**: `--ptdur 1000`
+- **Default**: `500`
+
+### **-south, --southdirection**
+- **Description**: A camera preset value that points the camera toward the south. Used in the `direction` mode.
+- **Usage**: Optional.
+- **Example**: `--southdirection 28`
+- **Default**: `1`
+
+
